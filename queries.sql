@@ -64,3 +64,41 @@ FROM users
 JOIN likes ON users.id = likes.user_id
 GROUP BY likes.user_id
 HAVING COUNT(*) = (SELECT COUNT(*) FROM photos);
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+-- QUESTION 8
+-- Finding what days inactive users (no posts) like photos
+
+-- STEP 1) Create table of inactive users who have liked photos
+CREATE TABLE inactive_users_activity AS (
+	SELECT
+		COUNT(*) AS count,
+		DATE_FORMAT(likes.created_at, '%W') AS day_of_week
+	FROM users
+	LEFT JOIN photos ON users.id = photos.user_id
+	LEFT JOIN likes ON users.id = likes.user_id
+	WHERE photos.id IS NULL AND likes.created_at IS NOT NULL
+	GROUP BY day_of_week
+);
+
+-- View table
+SELECT * FROM inactive_users_activity;
+
+-- STEP 2) Finding sum of top 2 days
+SELECT SUM(count) 
+FROM inactive_users_activity
+WHERE day_of_week = (SELECT day_of_week FROM inactive_users_activity ORDER BY count DESC LIMIT 1) OR
+	day_of_week = (SELECT day_of_week FROM inactive_users_activity ORDER BY count DESC LIMIT 1,1);
+    
+-- STEP 3) Finding the amount of likes that were done by inactive users
+SELECT SUM(count) FROM inactive_users_activity;
+
+-- STEP 4) Percentage of inactive users that liked photos in top 2 days
+SELECT
+	(SELECT SUM(count) 
+    FROM inactive_users_activity 
+    WHERE day_of_week = (SELECT day_of_week FROM inactive_users_activity ORDER BY count DESC LIMIT 1) OR
+		day_of_week = (SELECT day_of_week FROM inactive_users_activity ORDER BY count DESC LIMIT 1,1)) /
+	(SELECT SUM(count) 
+    FROM inactive_users_activity)
+AS percentage_inactive_top_2;
