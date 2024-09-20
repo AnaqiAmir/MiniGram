@@ -96,9 +96,85 @@ SELECT SUM(count) FROM inactive_users_activity;
 -- STEP 4) Percentage of inactive users that liked photos in top 2 days
 SELECT
 	(SELECT SUM(count) 
-    FROM inactive_users_activity 
-    WHERE day_of_week = (SELECT day_of_week FROM inactive_users_activity ORDER BY count DESC LIMIT 1) OR
-		day_of_week = (SELECT day_of_week FROM inactive_users_activity ORDER BY count DESC LIMIT 1,1)) /
+	    FROM inactive_users_activity 
+	    WHERE day_of_week = (SELECT day_of_week FROM inactive_users_activity ORDER BY count DESC LIMIT 1) OR
+					day_of_week = (SELECT day_of_week FROM inactive_users_activity ORDER BY count DESC LIMIT 1,1)) /
 	(SELECT SUM(count) 
-    FROM inactive_users_activity)
+    		FROM inactive_users_activity)
 AS percentage_inactive_top_2;
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+-- QUESTION 9
+-- What types of photos are influencers posting?
+
+-- Step 1) Find influencers
+CREATE TABLE influencers AS (
+	SELECT users.id, users.username, COUNT(*) AS num_of_followers
+	FROM users
+	JOIN follows ON users.id = follows.followee_id
+	GROUP BY follows.followee_id 
+	ORDER BY num_of_followers DESC
+	LIMIT 5
+);
+
+SELECT * FROM influencers;
+
+-- Step 2) Find tags of the photos by influencers
+SELECT tags.tag_name, COUNT(*) AS amount
+FROM influencers
+JOIN photos ON influencers.id = photos.user_id
+JOIN photo_tags ON photos.id = photo_tags.photo_id
+JOIN tags ON tags.id = photo_tags.tag_id
+GROUP BY tags.tag_name
+ORDER BY amount DESC
+LIMIT 5;
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+-- QUESTION 10
+-- What is the ratio of followers to following for both influencers and non-influencers?
+
+-- Num of followings (influencers)
+SELECT influencers.id, COUNT(*) AS num_of_following
+FROM influencers
+JOIN follows ON influencers.id = follows.follower_id
+GROUP BY follows.follower_id;
+
+-- Num of followings (non-influencers)
+SELECT users.id, COUNT(*) AS num_of_following
+FROM users
+JOIN follows ON users.id = follows.follower_id
+GROUP BY follows.follower_id
+HAVING users.id NOT IN (SELECT id FROM influencers);
+
+-- Ratio between followers to following (influencers)
+SELECT 
+	(SELECT AVG(num_of_followers)
+		FROM influencers) /
+	(SELECT AVG(a.num_of_following)
+		FROM (SELECT COUNT(*) AS num_of_following
+				FROM influencers
+				JOIN follows ON influencers.id = follows.follower_id
+				GROUP BY follows.follower_id
+			) AS a
+	) AS followers_to_following_ratio;
+    
+-- Ratio between followers to following (non-influencers)
+SELECT
+	(SELECT AVG(a.num_of_followers)
+		FROM (SELECT users.id, COUNT(*) AS num_of_followers
+				FROM users
+		                JOIN follows ON users.id = follows.followee_id
+		                GROUP BY follows.followee_id
+		                HAVING users.id NOT IN (SELECT id FROM influencers)
+                	) AS a
+	) /
+	(SELECT AVG(b.num_of_followings)
+		FROM (SELECT users.id, COUNT(*) AS num_of_followings
+				FROM users
+				JOIN follows ON users.id = follows.follower_id
+				GROUP BY follows.follower_id
+				HAVING users.id NOT IN (SELECT id FROM influencers)
+			) AS b
+	);
