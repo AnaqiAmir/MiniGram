@@ -132,3 +132,95 @@ SELECT
 AS percentage_inactive_top_2;
 ```
 **Output**:
+
+## 9. What types of photos are influencers posting?
+
+```sql
+-- Step 1) Find influencers
+CREATE TABLE influencers AS (
+	SELECT users.id, users.username, COUNT(*) AS num_of_followers
+	FROM users
+	JOIN follows ON users.id = follows.followee_id
+	GROUP BY follows.followee_id 
+	ORDER BY num_of_followers DESC
+	LIMIT 5
+);
+
+SELECT * FROM influencers;
+```
+
+```sql
+-- Step 2) Find tags of the photos by influencers
+SELECT tags.tag_name, COUNT(*) AS amount
+FROM influencers
+JOIN photos ON influencers.id = photos.user_id
+JOIN photo_tags ON photos.id = photo_tags.photo_id
+JOIN tags ON tags.id = photo_tags.tag_id
+GROUP BY tags.tag_name
+ORDER BY amount DESC
+LIMIT 5;
+```
+
+**Output**:
+
+## 10. What is the ratio between followers and following for influencers? What about for non-influencers? Compare the two ratios.
+
+```sql
+-- Num of followings (influencers)
+SELECT influencers.id, COUNT(*) AS num_of_following
+FROM influencers
+JOIN follows ON influencers.id = follows.follower_id
+GROUP BY follows.follower_id;
+```
+
+**Output**:
+
+```sql
+-- Num of followings (non-influencers)
+SELECT users.id, COUNT(*) AS num_of_following
+FROM users
+JOIN follows ON users.id = follows.follower_id
+GROUP BY follows.follower_id
+HAVING users.id NOT IN (SELECT id FROM influencers);
+```
+
+**Output**:
+
+```sql
+-- Ratio between followers to following (influencers)
+SELECT 
+	(SELECT AVG(num_of_followers)
+		FROM influencers) /
+	(SELECT AVG(a.num_of_following)
+		FROM (SELECT COUNT(*) AS num_of_following
+				FROM influencers
+				JOIN follows ON influencers.id = follows.follower_id
+				GROUP BY follows.follower_id
+			) AS a
+	) AS followers_to_following_ratio;
+```
+
+**Output**:
+
+```sql
+-- Ratio between followers to following (non-influencers)
+SELECT
+	(SELECT AVG(a.num_of_followers)
+		FROM (SELECT users.id, COUNT(*) AS num_of_followers
+				FROM users
+                JOIN follows ON users.id = follows.followee_id
+                GROUP BY follows.followee_id
+                HAVING users.id NOT IN (SELECT id FROM influencers)
+                ) AS a
+		) /
+	(SELECT AVG(b.num_of_followings)
+		FROM (SELECT users.id, COUNT(*) AS num_of_followings
+				FROM users
+				JOIN follows ON users.id = follows.follower_id
+				GROUP BY follows.follower_id
+				HAVING users.id NOT IN (SELECT id FROM influencers)
+				) AS b
+		);
+```
+
+**Output**:
