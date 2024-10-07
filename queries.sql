@@ -183,6 +183,36 @@ SELECT
 -- QUESTION 11
 -- How often do influencers post compared to non-influencers? Is there a significant difference?
 
+-- Num of posts (influencers)
+SELECT influencers.id, username, COUNT(*) AS num_of_posts 
+FROM influencers
+JOIN photos ON influencers.id = photos.user_id
+GROUP BY influencers.id, username;
+
+-- Avg of num of posts by influencers
+SELECT AVG(num_of_posts)
+FROM (SELECT influencers.id, username, COUNT(*) AS num_of_posts 
+		FROM influencers
+		JOIN photos ON influencers.id = photos.user_id
+		GROUP BY influencers.id, username
+	) as a;
+
+-- Num of Posts (non-influencers)
+SELECT users.id, COUNT(*) AS num_of_posts
+FROM users
+JOIN photos ON users.id = photos.user_id
+GROUP BY users.id
+HAVING users.id NOT IN (SELECT id FROM influencers);
+
+-- Avg of num of posts by non-influencers
+SELECT AVG(num_of_posts)
+FROM (SELECT users.id, COUNT(*) AS num_of_posts
+		FROM users
+		JOIN photos ON users.id = photos.user_id
+		GROUP BY users.id
+		HAVING users.id NOT IN (SELECT id FROM influencers)
+	) as b;
+
 
 --------------------------------------------------- SECTION 4: Posts and Content ---------------------------------------------------
 
