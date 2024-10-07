@@ -1,3 +1,5 @@
+--------------------------------------------------- SECTION 1: Basic Questions ---------------------------------------------------
+
 -- QUESTION 1
 -- Find the oldest 5 users
 SELECT * FROM users
@@ -57,6 +59,8 @@ GROUP BY tags.id
 ORDER BY count DESC
 LIMIT 6;
 
+--------------------------------------------------- SECTION 2: Bots and Inactive Users ---------------------------------------------------
+
 -- QUESTION 7
 -- Finding bots (Users who have liked every photo)
 SELECT users.username, likes.user_id
@@ -65,7 +69,6 @@ JOIN likes ON users.id = likes.user_id
 GROUP BY likes.user_id
 HAVING COUNT(*) = (SELECT COUNT(*) FROM photos);
 
----------------------------------------------------------------------------------------------------------------------------------------------
 -- QUESTION 8
 -- Finding what days inactive users (no posts) like photos
 
@@ -103,7 +106,7 @@ SELECT
     		FROM inactive_users_activity)
 AS percentage_inactive_top_2;
 
----------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------- SECTION 3: Influencers ---------------------------------------------------
 
 -- QUESTION 9
 -- What types of photos are influencers posting?
@@ -129,8 +132,6 @@ JOIN tags ON tags.id = photo_tags.tag_id
 GROUP BY tags.tag_name
 ORDER BY amount DESC
 LIMIT 5;
-
----------------------------------------------------------------------------------------------------------------------------------------------
 
 -- QUESTION 10
 -- What is the ratio of followers to following for both influencers and non-influencers?
@@ -178,3 +179,15 @@ SELECT
 				HAVING users.id NOT IN (SELECT id FROM influencers)
 			) AS b
 	);
+
+-- QUESTION 11
+-- How often do influencers post compared to non-influencers? Is there a significant difference?
+
+
+--------------------------------------------------- SECTION 4: Posts and Content ---------------------------------------------------
+
+-- QUESTION 12
+-- What type of posts receive the most likes?
+
+-- QUSTION 13
+-- What is the correlation between follower count and likes per post?
