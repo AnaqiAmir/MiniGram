@@ -218,6 +218,46 @@ FROM (SELECT users.id, COUNT(*) AS num_of_posts
 
 -- QUESTION 12
 -- What type of posts receive the most likes?
+SELECT tags.tag_name, COUNT(*) likes_by_tags
+FROM photos
+JOIN likes ON photos.id = likes.photo_id
+JOIN photo_tags ON photos.id = photo_tags.photo_id
+JOIN tags ON photo_tags.tag_id = tags.id
+GROUP BY tags.tag_name
+ORDER BY likes_by_tags DESC
+LIMIT 10;
 
 -- QUSTION 13
 -- What is the correlation between follower count and likes per post?
+
+-- STEP 1) Sort by follower count
+CREATE TABLE follower_count AS (
+	SELECT users.id, users.username, COUNT(*) as num_of_followers
+	FROM users
+	JOIN follows ON users.id = follows.followee_id
+	GROUP BY users.id, users.username
+	ORDER BY num_of_followers ASC
+);
+
+-- STEP 2) In the order of Step 1, display the likes per post of those users
+
+-- Likes per photo
+CREATE TABLE likes_per_photo AS (
+	SELECT user_id, username, AVG(num_of_likes) AS avg_likes_per_photo
+	FROM (SELECT users.id AS user_id, users.username, photos.id AS photo_id, COUNT(*) AS num_of_likes
+			FROM users
+			JOIN photos ON users.id = photos.user_id
+			JOIN likes ON photos.id = likes.photo_id
+			GROUP BY users.id, users.username, photos.id
+		) AS a
+	GROUP BY user_id, username
+);
+
+-- Combining to see num_of_followers next to avg_likes_per_photo
+SELECT likes_per_photo.user_id, likes_per_photo.username, num_of_followers, avg_likes_per_photo
+FROM likes_per_photo
+JOIN follower_count ON likes_per_photo.user_id = follower_count.id;
+
+-- STEP 3) Analyze
+-- Upon analysis, there is 0 correlation between the two indicating that the amount of followers you have 
+-- does NOT affect the average likes per photo for your account.
