@@ -235,7 +235,8 @@ SELECT
 				GROUP BY follows.follower_id
 				HAVING users.id NOT IN (SELECT id FROM influencers)
 				) AS b
-		);
+		)
+AS ratio_for_non_influencers;
 ```
 
 **Output**:
