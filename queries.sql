@@ -180,7 +180,8 @@ SELECT
 				GROUP BY follows.follower_id
 				HAVING users.id NOT IN (SELECT id FROM influencers)
 			) AS b
-	);
+	)
+AS ratio_for_non_influencers;
 
 -- QUESTION 11 ( -- NEED FIXING!!! FIGURE OUT HOW TO INCLUDE THOSE WITHOUT POSTS -- )
 -- How often do influencers post compared to non-influencers? Is there a significant difference?
