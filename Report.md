@@ -125,15 +125,29 @@ LIMIT 6;
 ### Question 7
 List all suspected bots in the database (users who have liked every photo)
 ```sql
-SELECT users.username, likes.user_id
-FROM users
-JOIN likes ON users.id = likes.user_id
-GROUP BY likes.user_id
-HAVING COUNT(*) = (SELECT COUNT(*) FROM photos);
+CREATE TABLE suspected_bots AS (
+	SELECT users.username, likes.user_id
+	FROM users
+	JOIN likes ON users.id = likes.user_id
+	GROUP BY likes.user_id
+	HAVING COUNT(*) = (SELECT COUNT(*) FROM photos)
+)
+
+SELECT * FROM suspected_bots
 ```
 **Output**
 
 <img width="157" alt="Q7 Output" src="https://github.com/user-attachments/assets/e702e617-97a7-485a-9d9f-48eea3544328">
+
+```sql
+-- Percentage of bots
+SELECT
+	(SELECT COUNT(*) FROM suspected_bots) / (SELECT COUNT(*) FROM users) 
+AS pct_of_bots;
+```
+**Output**:
+
+<img width="83" alt="Q7 Percentage of bots output" src="https://github.com/user-attachments/assets/6363a901-ea47-463a-ab6c-146eb1ddf5ec">
 
 ### Question 8
 Find out which days inactive users are typically on MiniGram
