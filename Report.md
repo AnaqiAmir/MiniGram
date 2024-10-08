@@ -114,7 +114,8 @@ CREATE TABLE inactive_users_activity AS (
 );
 
 -- View table
-SELECT * FROM inactive_users_activity;
+SELECT day_of_week, count FROM inactive_users_activity
+ORDER BY count DESC;
 ```
 
 ```sql
