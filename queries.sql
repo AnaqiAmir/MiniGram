@@ -64,11 +64,20 @@ LIMIT 6;
 
 -- QUESTION 7
 -- Finding bots (Users who have liked every photo)
-SELECT users.username, likes.user_id
-FROM users
-JOIN likes ON users.id = likes.user_id
-GROUP BY likes.user_id
-HAVING COUNT(*) = (SELECT COUNT(*) FROM photos);
+CREATE TABLE suspected_bots AS (
+	SELECT users.username, likes.user_id
+	FROM users
+	JOIN likes ON users.id = likes.user_id
+	GROUP BY likes.user_id
+	HAVING COUNT(*) = (SELECT COUNT(*) FROM photos)
+);
+
+SELECT * FROM suspected_bots;
+
+-- Percentage of bots
+SELECT
+	(SELECT COUNT(*) FROM suspected_bots) / (SELECT COUNT(*) FROM users) 
+AS pct_of_bots;
 
 -- QUESTION 8
 -- Finding what days inactive users (no posts) like photos
