@@ -49,8 +49,9 @@ GROUP BY likes.photo_id
 ORDER BY COUNT(*) DESC
 LIMIT 1;
 ```
-
 **Output**:
+
+<img width="241" alt="Q4 Output" src="https://github.com/user-attachments/assets/c060ce78-a503-441b-9140-bfa239570369">
 
 ### 5. What is the average number of photo per user?
 ```sql
@@ -103,10 +104,9 @@ JOIN likes ON users.id = likes.user_id
 GROUP BY likes.user_id
 HAVING COUNT(*) = (SELECT COUNT(*) FROM photos);
 ```
-
 **Output**
 
-
+<img width="157" alt="Q7 Output" src="https://github.com/user-attachments/assets/e702e617-97a7-485a-9d9f-48eea3544328">
 
 ### 8. Find out which days inactive users are typically on MiniGram
 
