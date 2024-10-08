@@ -10,6 +10,9 @@ LIMIT 5;
 ```
 **Output**:
 
+<img width="255" alt="Q1 Output" src="https://github.com/user-attachments/assets/b3608c2b-cc63-4cd4-8e70-b3b264763e9e">
+
+
 ### 2. Find the day of the week that most users register on
 ```sql
 SELECT 
