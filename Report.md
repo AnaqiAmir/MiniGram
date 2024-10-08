@@ -68,7 +68,8 @@ JOIN (
 	ORDER BY count DESC
 	LIMIT 6
 ) AS top_5_tags
-ON tags.id = top_5_tags.tag_id;
+ON tags.id = top_5_tags.tag_id
+ORDER BY count DESC;
 ```
 OR
 ```sql
