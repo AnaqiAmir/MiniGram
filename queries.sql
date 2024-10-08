@@ -243,6 +243,22 @@ FROM (SELECT users.id, COUNT(*) AS num_of_posts
 -- ==> Since T-value = 0.7220500081 < 1.984 = critical_value
 -- ==> We fail to reject H_0, ie There is no significant difference between the number of posts by influencers vs non-influencers
 
+-- Unequal Variance T-test -- 
+-- H_0: They're the same, alpha = 0.05
+-- For influencers: avg_1 = 3.8, n_1 = 5, var_1 = 15.76 (correct values calculated manually)
+-- Avg for non-influencers: avg_2 = 2.505263158, n_2 = 95, var_2 = 6.0183933518 (correct values calculated manually)
+-- df = ( (var_1^2/n_1) +  (var_2^2/n_2) ) ^ 2 / ( ( (var_1^2/n_1)^2 / (n_1 - 1) ) + ( (var_2^2/n_2)^2 / (n_2 - 1) ) )
+--    = ( (15.76^2/5) + (6.018^2/95) ) ^ 2 / ( ( (15.76^2/5)^2 / (5-1) ) + ( (6.018^2/95)^2 / (95-1) ) )
+--    = 4.06161973879
+--    ~ 4 (round down)
+-- critical_value = 2.776
+
+-- T-value = (avg_1 - avg_2) / sqrt( (var_1/n1) + (var_2/n2) )
+--         = (3.8-2.505) / sqrt ( (15.76/5) + (6.018/95) )
+--         = 0.72219723129
+
+-- Since 0.7222 < 2.776 ==> We fail to reject H_0. Same conclusion as normal t-test.
+
 
 --------------------------------------------------- SECTION 4: Posts and Content ---------------------------------------------------
 
