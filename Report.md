@@ -1,6 +1,8 @@
 # MiniGram User Analysis
 
-## 1. Find the 5 oldest users in the database
+## SECTION 1: Basic Questions
+
+### 1. Find the 5 oldest users in the database
 ```sql
 SELECT * FROM users
 ORDER BY created_at
@@ -8,7 +10,7 @@ LIMIT 5;
 ```
 **Output**:
 
-## 2. Find the day of the week that most users register on
+### 2. Find the day of the week that most users register on
 ```sql
 SELECT 
     DATE_FORMAT(created_at, '%W') AS day_of_week,
@@ -20,7 +22,7 @@ ORDER BY day_of_week_count DESC;
 
 **Output**:
 
-## 3. List all inactive users (users who have never posted a photo)
+### 3. List all inactive users (users who have never posted a photo)
 ```sql
 SELECT username
 FROM users
@@ -30,7 +32,7 @@ WHERE photos.id IS NULL;
 
 **Output**:
 
-## 4. Find the user who has the most liked photo
+### 4. Find the user who has the most liked photo
 ```sql
 SELECT username, image_url, COUNT(*) AS likes
 FROM likes
@@ -43,7 +45,7 @@ LIMIT 1;
 
 **Output**:
 
-## 5. What is the average number of photo per user?
+### 5. What is the average number of photo per user?
 ```sql
 SELECT
 	(SELECT COUNT(*) FROM photos) / (SELECT COUNT(*) FROM users)
@@ -52,7 +54,7 @@ AS avg_photos_per_user;
 
 **Output**:
 
-## 6. List the top 5 tags that are used
+### 6. List the top 5 tags that are used
 ```sql
 SELECT tag_name, count
 FROM tags
@@ -77,7 +79,11 @@ LIMIT 6;
 
 **Output**:
 
-## 7. List all suspected bots in the database (users who have liked every photo)
+***
+
+## SECTION 2: Bots and Inactive Users
+
+### 7. List all suspected bots in the database (users who have liked every photo)
 ```sql
 SELECT users.username, likes.user_id
 FROM users
@@ -88,7 +94,7 @@ HAVING COUNT(*) = (SELECT COUNT(*) FROM photos);
 
 **Output**
 
-## 8. Find out which days inactive users are typically on MiniGram
+### 8. Find out which days inactive users are typically on MiniGram
 
 ```sql
 -- STEP 1) Create table of inactive users who have liked photos
@@ -133,7 +139,11 @@ AS percentage_inactive_top_2;
 ```
 **Output**:
 
-## 9. What types of photos are influencers posting?
+***
+
+## SECTION 3: Influencers
+
+### 9. What types of photos are influencers posting?
 
 ```sql
 -- Step 1) Find influencers
@@ -163,7 +173,7 @@ LIMIT 5;
 
 **Output**:
 
-## 10. What is the ratio between followers and following for influencers? What about for non-influencers? Compare the two ratios.
+### 10. What is the ratio between followers and following for influencers? What about for non-influencers? Compare the two ratios.
 
 ```sql
 -- Num of followings (influencers)
@@ -221,6 +231,111 @@ SELECT
 				HAVING users.id NOT IN (SELECT id FROM influencers)
 				) AS b
 		);
+```
+
+**Output**:
+
+### Question 11. How often do influencers post compared to non-influencers? Is there a significant difference?
+
+```sql
+-- Num of posts (influencers)
+SELECT influencers.id, username, COUNT(*) AS num_of_posts 
+FROM influencers
+JOIN photos ON influencers.id = photos.user_id
+GROUP BY influencers.id, username;
+```
+
+**Output**:
+
+```sql
+-- Avg of num of posts by influencers
+SELECT AVG(num_of_posts)
+FROM (SELECT influencers.id, username, COUNT(*) AS num_of_posts 
+		FROM influencers
+		JOIN photos ON influencers.id = photos.user_id
+		GROUP BY influencers.id, username
+	) as a;
+```
+
+**Output**:
+
+```sql
+-- Num of Posts (non-influencers)
+SELECT users.id, COUNT(*) AS num_of_posts
+FROM users
+JOIN photos ON users.id = photos.user_id
+GROUP BY users.id
+HAVING users.id NOT IN (SELECT id FROM influencers);
+```
+
+**Output**:
+
+```sql
+-- Avg of num of posts by non-influencers
+SELECT AVG(num_of_posts)
+FROM (SELECT users.id, COUNT(*) AS num_of_posts
+		FROM users
+		JOIN photos ON users.id = photos.user_id
+		GROUP BY users.id
+		HAVING users.id NOT IN (SELECT id FROM influencers)
+	) as b;
+```
+
+**Output**:
+
+***
+
+## SECTION 4: Posts and Content
+
+### Question 12. What type of posts receive the most likes?
+
+```sql
+SELECT tags.tag_name, COUNT(*) likes_by_tags
+FROM photos
+JOIN likes ON photos.id = likes.photo_id
+JOIN photo_tags ON photos.id = photo_tags.photo_id
+JOIN tags ON photo_tags.tag_id = tags.id
+GROUP BY tags.tag_name
+ORDER BY likes_by_tags DESC
+LIMIT 10;
+```
+
+**Output**:
+
+### Question 13. What is the correlation between follower count and likes per post?
+
+```sql
+-- STEP 1) Sort by follower count
+CREATE TABLE follower_count AS (
+	SELECT users.id, users.username, COUNT(*) as num_of_followers
+	FROM users
+	JOIN follows ON users.id = follows.followee_id
+	GROUP BY users.id, users.username
+	ORDER BY num_of_followers ASC
+);
+```
+
+**Output**:
+
+```sql
+-- STEP 2) In the order of Step 1, display the likes per post of those users
+
+-- Likes per photo
+CREATE TABLE likes_per_photo AS (
+	SELECT user_id, username, AVG(num_of_likes) AS avg_likes_per_photo
+	FROM (SELECT users.id AS user_id, users.username, photos.id AS photo_id, COUNT(*) AS num_of_likes
+			FROM users
+			JOIN photos ON users.id = photos.user_id
+			JOIN likes ON photos.id = likes.photo_id
+			GROUP BY users.id, users.username, photos.id
+		) AS a
+	GROUP BY user_id, username
+);
+
+-- Combining to see num_of_followers next to avg_likes_per_photo
+SELECT likes_per_photo.user_id, likes_per_photo.username, num_of_followers, avg_likes_per_photo
+FROM likes_per_photo
+JOIN follower_count ON likes_per_photo.user_id = follower_count.id;
 ```
 
 **Output**:
