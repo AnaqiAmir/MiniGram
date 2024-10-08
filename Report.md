@@ -2,14 +2,28 @@
 This document details the queries that were used to answer the business questions that were presented. It also provide the outputs.
 
 ## Table of Contents
-1. [Section 1: Basic Questions](##section-1-basic-questions)
-	* [Question 1: Find the oldest users in the database](##1-find-the-5-oldest-users-in-the-database)
-2. Section 2: Bots and Inactive Users
-3. [Section 3: Influencers](#section-3)
+1. [Section 1: Basic Questions](#section-1-basic-questions)
+	* [Question 1: Find the oldest users in the database](#question-1)
+	* [Question 2: Find the day of the week that most users register on](#question-2)
+ 	* [Question 3: List all inactive users (users who have never posted a photo)](#question-3)
+  	* [Question 4: Find the user who has the most liked photo](#question-4)
+   	* [Question 5: What is the average number of photo per user?](#question-5)
+   	* [Question 6: List the top 5 tags that are used](#question-6)
+2. [Section 2: Bots and Inactive Users](#section-2-bots-and-inactive-users)
+	* [Question 7: List all suspected bots in the database (users who have liked every photo)](#question-7)
+ 	* [Question 8: Find out which days inactive users are typically on MiniGram](#question-8)
+3. [Section 3: Influencers](#section-3-influencers)
+	* [Question 9: What types of photos are influencers posting?](#question-9)
+ 	* [Question 10: What is the ratio between followers and following for influencers? What about for non-influencers? Compare the two ratios.](#question-10)
+  	* [Question 11: How often do influencers post compared to non-influencers? Is there a significant difference?](#question-11)
+4. [Section 4: Posts and Content](#section-4-posts-and-content)
+	* [Question 12: What type of posts receive the most likes?](#question-12)
+ 	* [Question 13: What is the correlation between follower count and likes per post?](#question-13)
 
 ## SECTION 1: Basic Questions
 
-### 1. Find the 5 oldest users in the database
+### Question 1
+Find the 5 oldest users in the database
 ```sql
 SELECT * FROM users
 ORDER BY created_at
@@ -20,7 +34,8 @@ LIMIT 5;
 <img width="255" alt="Q1 Output" src="https://github.com/user-attachments/assets/b3608c2b-cc63-4cd4-8e70-b3b264763e9e">
 
 
-### 2. Find the day of the week that most users register on
+### Question 2
+Find the day of the week that most users register on
 ```sql
 SELECT 
     DATE_FORMAT(created_at, '%W') AS day_of_week,
@@ -34,7 +49,8 @@ ORDER BY day_of_week_count DESC;
 
 <img width="253" alt="Q2 Output" src="https://github.com/user-attachments/assets/7354909a-9a50-4c2d-808b-087474f3d67d">
 
-### 3. List all inactive users (users who have never posted a photo)
+### Question 3
+List all inactive users (users who have never posted a photo)
 ```sql
 SELECT username
 FROM users
@@ -46,7 +62,8 @@ WHERE photos.id IS NULL;
 
 <img width="121" alt="Q3 Output" src="https://github.com/user-attachments/assets/619b5be8-4cd6-42ae-85cf-3fd18fb136e7">
 
-### 4. Find the user who has the most liked photo
+### Question 4
+Find the user who has the most liked photo
 ```sql
 SELECT username, image_url, COUNT(*) AS likes
 FROM likes
@@ -60,7 +77,8 @@ LIMIT 1;
 
 <img width="241" alt="Q4 Output" src="https://github.com/user-attachments/assets/c060ce78-a503-441b-9140-bfa239570369">
 
-### 5. What is the average number of photo per user?
+### Question 5
+What is the average number of photo per user?
 ```sql
 SELECT
 	(SELECT COUNT(*) FROM photos) / (SELECT COUNT(*) FROM users)
@@ -71,7 +89,8 @@ AS avg_photos_per_user;
 
 <img width="130" alt="Q5 Output" src="https://github.com/user-attachments/assets/bebf66d5-8f81-4d3a-b64b-26f691dfe654">
 
-### 6. List the top 5 tags that are used
+### Question 6
+List the top 5 tags that are used
 ```sql
 SELECT tag_name, count
 FROM tags
@@ -103,7 +122,8 @@ LIMIT 6;
 
 ## SECTION 2: Bots and Inactive Users
 
-### 7. List all suspected bots in the database (users who have liked every photo)
+### Question 7
+List all suspected bots in the database (users who have liked every photo)
 ```sql
 SELECT users.username, likes.user_id
 FROM users
@@ -115,7 +135,8 @@ HAVING COUNT(*) = (SELECT COUNT(*) FROM photos);
 
 <img width="157" alt="Q7 Output" src="https://github.com/user-attachments/assets/e702e617-97a7-485a-9d9f-48eea3544328">
 
-### 8. Find out which days inactive users are typically on MiniGram
+### Question 8
+Find out which days inactive users are typically on MiniGram
 
 ```sql
 -- STEP 1) Create table of inactive users who have liked photos
@@ -177,9 +198,10 @@ AS percentage_inactive_top_2;
 
 ***
 
-## SECTION 3
+## SECTION 3: Influencers
 
-### 9. What types of photos are influencers posting?
+### Question 9
+What types of photos are influencers posting?
 
 ```sql
 -- Step 1) Find influencers
@@ -213,7 +235,8 @@ LIMIT 5;
 
 <img width="180" alt="Q9 Output" src="https://github.com/user-attachments/assets/7aca1111-abd3-48b9-85b5-82f53e66d1ef">
 
-### 10. What is the ratio between followers and following for influencers? What about for non-influencers? Compare the two ratios.
+### Question 10
+What is the ratio between followers and following for influencers? What about for non-influencers? Compare the two ratios.
 
 ```sql
 -- Num of followings (influencers)
@@ -281,7 +304,8 @@ AS ratio_for_non_influencers;
 
 <img width="178" alt="Q10 Non-Influencers Ratio" src="https://github.com/user-attachments/assets/9de358b1-97a9-4523-bc12-19ea2cc452b1">
 
-### Question 11. How often do influencers post compared to non-influencers? Is there a significant difference?
+### Question 11
+How often do influencers post compared to non-influencers? Is there a significant difference?
 
 ```sql
 -- Num of posts (influencers)
@@ -333,7 +357,8 @@ FROM (SELECT users.id, COUNT(*) AS num_of_posts
 
 ## SECTION 4: Posts and Content
 
-### Question 12. What type of posts receive the most likes?
+### Question 12
+What type of posts receive the most likes?
 
 ```sql
 SELECT tags.tag_name, COUNT(*) likes_by_tags
@@ -349,7 +374,8 @@ LIMIT 10;
 
 <img width="209" alt="Q12 Output" src="https://github.com/user-attachments/assets/67ae267c-c470-4ab0-b0e1-c7fec91b75b9">
 
-### Question 13. What is the correlation between follower count and likes per post?
+### Question 13
+What is the correlation between follower count and likes per post?
 
 ```sql
 -- STEP 1) Sort by follower count
