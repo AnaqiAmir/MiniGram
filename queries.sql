@@ -180,7 +180,7 @@ SELECT
 			) AS b
 	);
 
--- QUESTION 11
+-- QUESTION 11 ( -- NEED FIXING!!! FIGURE OUT HOW TO INCLUDE THOSE WITHOUT POSTS -- )
 -- How often do influencers post compared to non-influencers? Is there a significant difference?
 
 -- Num of posts (influencers)
@@ -189,7 +189,7 @@ FROM influencers
 JOIN photos ON influencers.id = photos.user_id
 GROUP BY influencers.id, username;
 
--- Avg of num of posts by influencers
+-- Avg of num of posts by influencers (real number should be 3.8)
 SELECT AVG(num_of_posts)
 FROM (SELECT influencers.id, username, COUNT(*) AS num_of_posts 
 		FROM influencers
@@ -204,7 +204,7 @@ JOIN photos ON users.id = photos.user_id
 GROUP BY users.id
 HAVING users.id NOT IN (SELECT id FROM influencers);
 
--- Avg of num of posts by non-influencers
+-- Avg of num of posts by non-influencers (real number should be 2.505263158)
 SELECT AVG(num_of_posts)
 FROM (SELECT users.id, COUNT(*) AS num_of_posts
 		FROM users
@@ -212,6 +212,36 @@ FROM (SELECT users.id, COUNT(*) AS num_of_posts
 		GROUP BY users.id
 		HAVING users.id NOT IN (SELECT id FROM influencers)
 	) as b;
+    
+-- T-test
+-- H_0: They're the same, alpha = 0.05
+-- For influencers: avg_posts = 3.8, n = 5, std = 3.9698866482558 (correct values calculated manually)
+-- Avg for non-influencers = 2.505263158, n = 95, std= 2.4532413969686 (correct values calculated manually)
+-- df = 5 + 95 - 1 = 99 ~ 100 
+-- critical_value = 1.984
+
+-- STD for influencers <<<<<<<<< NEEDS FIXING!!! IT DOESNT ACCOUNT FOR USER SOMETHING THAT HAS 0 POSTS
+SELECT STD(num_of_posts)
+FROM (SELECT COUNT(*) AS num_of_posts
+		FROM influencers
+        JOIN photos ON influencers.id = photos.user_id
+        GROUP BY photos.user_id
+	) AS a;
+
+-- STD for non-influencers <<<<<<<<< NEEDS FIXING TOO!!! 25 USERS WITH 0 POSTS UNACCOUNTED FOR
+SELECT STD(num_of_posts)
+FROM (SELECT users.id, COUNT(*) AS num_of_posts
+		FROM users
+		JOIN photos ON users.id = photos.user_id
+		GROUP BY photos.user_id
+		HAVING users.id NOT IN (SELECT id FROM influencers)
+	) AS b;
+    
+-- ==> T-value = (3.8 - 2.505263158) / sqrt( (3.9698866482558^2 / 5) + (2.4532413969686^2 / 95) )
+--             = 0.7220500081
+
+-- ==> Since T-value = 0.7220500081 < 1.984 = critical_value
+-- ==> We fail to reject H_0, ie There is no significant difference between the number of posts by influencers vs non-influencers
 
 
 --------------------------------------------------- SECTION 4: Posts and Content ---------------------------------------------------
