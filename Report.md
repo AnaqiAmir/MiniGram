@@ -5,7 +5,7 @@ This document details the queries that were used to answer the business question
 1. [Section 1: Basic Questions](##section-1-basic-questions)
 	* [Question 1: Find the oldest users in the database](##1-find-the-5-oldest-users-in-the-database)
 2. Section 2: Bots and Inactive Users
-3. [Section 3: Influencers](##section-3-influencers)
+3. [Section 3: Influencers](##section-3)
 
 ## SECTION 1: Basic Questions
 
@@ -177,7 +177,7 @@ AS percentage_inactive_top_2;
 
 ***
 
-## SECTION 3: Influencers
+## SECTION 3
 
 ### 9. What types of photos are influencers posting?
 
