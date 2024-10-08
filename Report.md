@@ -1,4 +1,11 @@
 # MiniGram User Analysis
+This document details the queries that were used to answer the business questions that were presented. It also provide the outputs.
+
+## Table of Contents
+1. [Section 1: Basic Questions](##section-1-basic-questions)
+	* [Question 1: Find the oldest users in the database](##1-find-the-5-oldest-users-in-the-database)
+2. Section 2: Bots and Inactive Users
+3. [Section 3: Influencers](##section-3-influencers)
 
 ## SECTION 1: Basic Questions
 
