@@ -14,6 +14,16 @@ The following areas will be covered in this report:
 ## Executive Summary
 
 ## Data Structure
+MiniGram's database structure can be seen below consisting of 7 tables:
+1. users
+2. photos
+3. tags
+4. photo_tags
+5. follows
+6. likes
+7. comments
+
+![ERD MiniGram](https://github.com/user-attachments/assets/9913087b-bf00-49c7-8372-534c53ea1e6e)
 
 ## Assumptions and Caveats
 The primary limitation of this project lies in the nature of the data, as it is based on synthetic data rather than real-world user interactions. As a result, the findings of this report may not perfectly mirror actual user behavior on social media platforms. However, the objective of this report is to analyze the unique dynamics of MiniGram's ecosystem. Therefore, it should be viewed as an analysis specific to this application, rather than a comprehensive reflection of broader social media trends.
