@@ -188,9 +188,53 @@ WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
 ORDER BY total DESC;
 
+-- Cleaning views
+DROP VIEW user_activity;
+DROP VIEW user_activity_rate;
+DROP VIEW user_photos;
+DROP VIEW user_likes;
+DROP VIEW user_comments;
+DROP VIEW user_followings;
+
 -- Section 3: Posts and Content
 -- a) Which types of content typically receive the most engagement?
+CREATE VIEW photo_engagement AS (
+	SELECT photo_likes.id AS photo_id, total_likes, total_comments, (total_likes + (1.5*total_comments)) AS engagement
+	FROM (
+		SELECT photos.id, COUNT(*) AS total_likes
+		FROM photos
+		JOIN likes ON photos.id = likes.photo_id
+		GROUP BY photos.id
+		ORDER BY total_likes DESC
+	) AS photo_likes
+	JOIN (
+		SELECT photos.id, COUNT(*) AS total_comments
+		FROM photos
+		JOIN comments ON photos.id = comments.photo_id
+		GROUP BY photos.id
+		ORDER BY total_comments DESC
+	) AS photo_comments
+	ON photo_likes.id = photo_comments.id
+	HAVING engagement >= 100
+	ORDER BY engagement DESC
+);
+
+SELECT tag_name, COUNT(*) AS total
+FROM (
+	SELECT photo_tags.photo_id, tags.tag_name
+	FROM photo_tags
+	JOIN tags ON photo_tags.tag_id = tags.id
+	HAVING photo_id IN (SELECT photo_id FROM photo_engagement)
+) AS a
+GROUP BY tag_name
+ORDER BY total DESC;
+
 -- b) What is the ideal time for a user to post content?
+SELECT HOUR(photos.created_at) AS hour, COUNT(*) AS total
+FROM photos
+WHERE id IN (SELECT photo_id FROM photo_engagement)
+GROUP BY hour
+ORDER BY total DESC;
 
 -- Section 4: Influencers
 -- a) What types of content do influencers post compared to non-influencers?
