@@ -36,10 +36,10 @@ ORDER BY FIELD(day_of_week, 'Sunday','Monday','Tuesday','Wednesday','Thursday','
 SELECT HOUR(created_at) AS hour, COUNT(*) AS total
 FROM users
 GROUP BY hour
-ORDER BY hour; 
+ORDER BY hour;
 
 -- b) Which users are the most active? When are they most active?
--- Active users will be calculated as such: 
+-- Active users will be calculated as such:
 -- i ) activity = # of photos + # of likes + # of comments + # of followings
 -- ii) activity_rate = (# of photos + # of likes + # of comments + # of followings) / # of days since the user registered
 
@@ -77,9 +77,9 @@ CREATE VIEW user_followings AS (
 
 -- Activity (note that users with activity>1000 are suspected bots)
 CREATE VIEW user_activity AS (
-	SELECT 
-		users.id, 
-		users.username, 
+	SELECT
+		users.id,
+		users.username,
         num_of_photos,
         num_of_likes,
         num_of_comments,
@@ -94,55 +94,55 @@ CREATE VIEW user_activity AS (
 	ORDER BY activity DESC
 );
 
--- Activity rate (excluding suspected bots and new users)
+-- Activity rate
 CREATE VIEW user_activity_rate AS (
-	SELECT 
+	SELECT
 		users.id, users.username,
 		activity,
 		DATEDIFF(NOW(), users.created_at) AS days_on_minigram,
 		activity / DATEDIFF(NOW(), users.created_at) AS activity_rate
 	FROM users
 	JOIN user_activity ON users.id = user_activity.id
-	HAVING users.id NOT IN (SELECT id FROM user_activity WHERE activity > 1000) AND days_on_minigram > 10
 	ORDER BY activity_rate DESC
 );
 
--- Active users (by activity)
+-- Active users (by activity) (excludes bots)
 DROP VIEW active_users;
 CREATE VIEW active_users AS (
 	SELECT * FROM user_activity WHERE activity < 1000 AND activity > 150
 );
 
--- Active users (by activity rate)
+-- Active users (by activity rate) (excludes suspected bots and new users)
 DROP VIEW active_users;
 CREATE VIEW active_users AS (
-	SELECT * FROM user_activity_rate WHERE activity_rate >= 1
+	SELECT * FROM user_activity_rate
+    WHERE activity_rate >= 1 AND activity < 1000 AND days_on_minigram > 10
 );
 
--- User activities by day
+-- Active user activities by day
 SELECT DAYNAME(photos.created_at) AS day, COUNT(*) AS total
-FROM users 
+FROM users
 JOIN photos ON users.id = photos.user_id
 WHERE users.id IN (SELECT id FROM active_users)
 GROUP BY day
 ORDER BY total DESC;
 
 SELECT DAYNAME(likes.created_at) AS day, COUNT(*) AS total
-FROM users 
+FROM users
 JOIN likes ON users.id = likes.user_id
 WHERE users.id IN (SELECT id FROM active_users)
 GROUP BY day
 ORDER BY total DESC;
 
 SELECT DAYNAME(comments.created_at) AS day, COUNT(*) AS total
-FROM users 
+FROM users
 JOIN comments ON users.id = comments.user_id
 WHERE users.id IN (SELECT id FROM active_users)
 GROUP BY day
 ORDER BY total DESC;
 
 SELECT DAYNAME(follows.created_at) AS day, COUNT(*) AS total
-FROM users 
+FROM users
 JOIN follows ON users.id = follows.follower_id
 WHERE users.id IN (SELECT id FROM active_users)
 GROUP BY day
@@ -151,38 +151,38 @@ ORDER BY total DESC;
 -- c) Which users are the most inactive? When are they most active?
 DROP VIEW inactive_users;
 CREATE VIEW inactive_users AS (
-	SELECT * FROM user_activity WHERE activity <= 100
+	SELECT * FROM user_activity WHERE activity <= 150
 );
 
 DROP VIEW inactive_users;
 CREATE VIEW inactive_users AS (
-	SELECT * FROM user_activity_rate WHERE activity_rate <= 0.03 ORDER BY activity_rate
+	SELECT * FROM user_activity_rate WHERE activity_rate <= 0.05
 );
 
--- User activities by day
+-- Inactive user activities by day
 SELECT DAYNAME(photos.created_at) AS day, COUNT(*) AS total
-FROM users 
+FROM users
 JOIN photos ON users.id = photos.user_id
 WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
 ORDER BY total DESC;
 
 SELECT DAYNAME(likes.created_at) AS day, COUNT(*) AS total
-FROM users 
+FROM users
 JOIN likes ON users.id = likes.user_id
 WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
 ORDER BY total DESC;
 
 SELECT DAYNAME(comments.created_at) AS day, COUNT(*) AS total
-FROM users 
+FROM users
 JOIN comments ON users.id = comments.user_id
 WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
 ORDER BY total DESC;
 
 SELECT DAYNAME(follows.created_at) AS day, COUNT(*) AS total
-FROM users 
+FROM users
 JOIN follows ON users.id = follows.follower_id
 WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
@@ -195,9 +195,13 @@ DROP VIEW user_photos;
 DROP VIEW user_likes;
 DROP VIEW user_comments;
 DROP VIEW user_followings;
+DROP VIEW active_users;
+DROP VIEW inactive_users;
 
 -- Section 3: Posts and Content
 -- a) Which types of content typically receive the most engagement?
+-- Engagement = # of likes + (# of comments)*1.5 <----- Comments are worth more
+DROP VIEW photo_engagement;
 CREATE VIEW photo_engagement AS (
 	SELECT photo_likes.id AS photo_id, total_likes, total_comments, (total_likes + (1.5*total_comments)) AS engagement
 	FROM (
@@ -236,10 +240,147 @@ WHERE id IN (SELECT photo_id FROM photo_engagement)
 GROUP BY hour
 ORDER BY total DESC;
 
+-- Cleaning views
+DROP VIEW photo_engagement;
+
 -- Section 4: Influencers
+-- Influencers are defined as users who have >10% of all users as their followers
+
+CREATE VIEW influencers AS (
+	SELECT users.id, users.username, users.created_at, COUNT(*) AS num_of_followers
+	FROM users
+	JOIN follows ON users.id = follows.followee_id
+	GROUP BY follows.followee_id
+	HAVING num_of_followers > (SELECT COUNT(*) FROM users)*0.1
+	ORDER BY num_of_followers DESC
+);
+
 -- a) What types of content do influencers post compared to non-influencers?
+SELECT tags.tag_name, COUNT(*) AS total
+FROM (
+	SELECT * FROM photos WHERE photos.user_id IN (SELECT id FROM influencers)
+) AS photo_temp
+JOIN photo_tags ON photo_temp.id = photo_tags.photo_id
+JOIN tags ON photo_tags.tag_id = tags.id
+GROUP BY tag_name
+ORDER BY total DESC;
+
+SELECT tags.tag_name, COUNT(*) AS total
+FROM (
+	SELECT * FROM photos WHERE photos.user_id NOT IN (SELECT id FROM influencers)
+) AS photo_temp
+JOIN photo_tags ON photo_temp.id = photo_tags.photo_id
+JOIN tags ON photo_tags.tag_id = tags.id
+GROUP BY tag_name
+ORDER BY total DESC;
+
 -- b) Find the difference in activity between influencers and non-influencers.
+-- i) activity
+SELECT AVG(activity) AS avg_influencer_activity
+FROM (
+	SELECT *
+	FROM user_activity
+	WHERE id IN (SELECT id FROM influencers)
+	ORDER BY activity DESC
+) AS a;
+
+SELECT AVG(activity) AS avg_non_influencer_activity
+FROM (
+	SELECT *
+	FROM user_activity
+	WHERE id NOT IN (SELECT id FROM influencers) AND activity < 1000
+	ORDER BY activity DESC
+) AS a;
+
+-- ii) activity rate
+SELECT AVG(activity_rate) AS avg_influencer_activity_rate
+FROM (
+	SELECT *
+	FROM user_activity_rate
+	WHERE id IN (SELECT id FROM influencers)
+	ORDER BY activity DESC
+) AS a;
+
+SELECT AVG(activity_rate) AS avg_non_influencer_activity_rate
+FROM (
+	SELECT *
+	FROM user_activity_rate
+	WHERE id NOT IN (SELECT id FROM influencers)
+	ORDER BY activity DESC
+) AS a;
+
 -- c) How do influencers impact other users' engagement on MiniGram?
+-- Find which users engage the most with influencers
+
+CREATE VIEW user_influencer_likes AS (
+	SELECT likes.user_id AS user_id, photos.user_id AS influencer, COUNT(*) AS total_likes
+	FROM likes
+	JOIN photos ON likes.photo_id = photos.id
+	GROUP BY user_id, influencer
+	HAVING influencer in (SELECT id FROM influencers)
+	ORDER BY total_likes DESC
+);
+
+CREATE VIEW user_influencer_comments AS (
+	SELECT comments.user_id AS user_id, photos.user_id AS influencer, COUNT(*) AS total_comments
+	FROM comments
+	JOIN photos ON comments.photo_id = photos.id
+	GROUP BY user_id, influencer
+	HAVING influencer in (SELECT id FROM influencers)
+	ORDER BY total_comments DESC
+);
+
+CREATE VIEW user_influencer_engagement AS (
+	SELECT
+		user_influencer_likes.user_id,
+		user_influencer_likes.influencer,
+		total_likes,
+		total_comments,
+		total_likes + total_comments AS total_engagement
+	FROM user_influencer_likes
+	JOIN user_influencer_comments ON
+		user_influencer_likes.user_id = user_influencer_comments.user_id AND
+		user_influencer_likes.influencer = user_influencer_comments.influencer
+	ORDER BY total_engagement DESC
+);
+
+CREATE VIEW user_non_influencer_likes AS (
+	SELECT likes.user_id AS user_id, photos.user_id AS non_influencer, COUNT(*) AS total_likes
+	FROM likes
+	JOIN photos ON likes.photo_id = photos.id
+	GROUP BY user_id, non_influencer
+	HAVING non_influencer NOT IN (SELECT id FROM influencers)
+	ORDER BY total_likes DESC
+);
+
+CREATE VIEW user_non_influencer_comments AS (
+	SELECT comments.user_id AS user_id, photos.user_id AS non_influencer, COUNT(*) AS total_comments
+	FROM comments
+	JOIN photos ON comments.photo_id = photos.id
+	GROUP BY user_id, non_influencer
+	HAVING non_influencer NOT IN (SELECT id FROM influencers)
+	ORDER BY total_comments DESC
+);
+
+CREATE VIEW user_non_influencer_engagement AS (
+	SELECT
+		user_non_influencer_likes.user_id,
+		user_non_influencer_likes.non_influencer,
+		total_likes,
+		total_comments,
+		total_likes + total_comments AS total_engagement
+	FROM user_non_influencer_likes
+	JOIN user_non_influencer_comments ON
+		user_non_influencer_likes.user_id = user_non_influencer_comments.user_id AND
+		user_non_influencer_likes.non_influencer = user_non_influencer_comments.non_influencer
+	ORDER BY total_engagement DESC
+);
+
+-- Average engagement of users towards influencers and non-influencers
+SELECT AVG(total_engagement) FROM user_influencer_engagement;
+SELECT AVG(total_engagement) FROM user_non_influencer_engagement;
+
+-- Conduct t-test after
 
 -- Section 5: Bots
 -- a) When are the bots most active?
