@@ -383,7 +383,26 @@ SELECT AVG(total_engagement) FROM user_non_influencer_engagement;
 -- Conduct t-test after
 
 -- Section 5: Bots
+-- Bots are defined as users who like >5% of all photos
+
+DROP VIEW suspected_bots;
+CREATE VIEW suspected_bots AS (
+	SELECT 
+		users.id,
+        users.username
+	FROM users
+	JOIN likes ON users.id = likes.user_id
+	GROUP BY likes.user_id
+	HAVING COUNT(*) >= (SELECT COUNT(*) FROM photos) * 0.05
+);
+
 -- a) When are the bots most active?
+SELECT HOUR(likes.created_at) AS hour, COUNT(*) AS total
+FROM likes
+WHERE user_id IN (SELECT id FROM suspected_bots)
+GROUP BY hour
+ORDER BY total DESC;
+
 -- b) How do bots impact the posts that they engage in?
 -- c) Find which accounts (if any) implement the use of bots.
 
