@@ -473,6 +473,20 @@ SELECT
 FROM user_bot_likes;
 
 -- c) Find which accounts (if any) implement the use of bots.
+-- Combine user_bot_like with photos and group by user_id
+-- Find users where their >50% of their likes are by bots
+SELECT
+	photos.user_id AS user_id,
+    users.username AS username,
+	SUM(bot_likes) AS total_likes_by_bots,
+	SUM(total_likes) AS total_likes,
+	SUM(bot_likes) / SUM(total_likes) AS pct_liked_by_bots
+FROM photos
+JOIN user_bot_likes ON photos.id = user_bot_likes.photo_id
+JOIN users ON photos.user_id = users.id
+GROUP BY user_id
+HAVING pct_liked_by_bots >= 0.5
+ORDER BY pct_liked_by_bots DESC;
 
 -- Section 6: Year by Year Analysis
 -- a) Compare the amount of posts/likes/comments from year to year
