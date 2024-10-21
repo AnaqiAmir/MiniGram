@@ -397,31 +397,81 @@ CREATE VIEW suspected_bots AS (
 );
 
 -- a) When are the bots most active?
-SELECT YEAR(likes.created_at) AS year, COUNT(*) AS total
+SELECT 
+	YEAR(likes.created_at) AS year,
+    COUNT(*) AS total
 FROM likes
 WHERE user_id IN (SELECT id FROM suspected_bots)
 GROUP BY year
 ORDER BY total DESC;
 
-SELECT MONTHNAME(likes.created_at) AS month, COUNT(*) AS total
+SELECT
+	MONTHNAME(likes.created_at) AS month,
+    COUNT(*) AS total
 FROM likes
 WHERE user_id IN (SELECT id FROM suspected_bots)
 GROUP BY month
 ORDER BY total DESC;
 
-SELECT DAYNAME(likes.created_at) AS day, COUNT(*) AS total
+SELECT
+	DAYNAME(likes.created_at) AS day,
+    COUNT(*) AS total
 FROM likes
 WHERE user_id IN (SELECT id FROM suspected_bots)
 GROUP BY day
 ORDER BY total DESC;
 
-SELECT HOUR(likes.created_at) AS hour, COUNT(*) AS total
+SELECT
+	HOUR(likes.created_at) AS hour,
+    COUNT(*) AS total
 FROM likes
 WHERE user_id IN (SELECT id FROM suspected_bots)
 GROUP BY hour
 ORDER BY total DESC;
 
 -- b) How do bots impact the posts that they engage in?
+-- Create df with photo.id, bot_likes, user_likes, total_likes
+
+CREATE VIEW user_bot_likes AS (
+	WITH likes_by_bots AS (
+
+		SELECT
+			photo_id,
+			COUNT(*) AS bot_likes
+		FROM likes
+		WHERE user_id IN (SELECT id FROM suspected_bots)
+		GROUP BY photo_id
+
+	),
+
+	likes_by_users AS (
+
+		SELECT
+			photo_id,
+			COUNT(*) AS user_likes
+		FROM likes
+		WHERE user_id NOT IN (SELECT id FROM suspected_bots)
+		GROUP BY photo_id
+
+	)
+
+	SELECT
+		likes_by_bots.photo_id,
+		likes_by_bots.bot_likes,
+		likes_by_users.user_likes,
+		likes_by_bots.bot_likes + likes_by_users.user_likes AS total_likes,
+        likes_by_bots.bot_likes / (likes_by_bots.bot_likes + likes_by_users.user_likes) AS pct_of_bot_likes,
+        likes_by_users.user_likes / (likes_by_bots.bot_likes + likes_by_users.user_likes) AS pct_of_user_likes
+	FROM likes_by_bots
+	INNER JOIN likes_by_users ON likes_by_bots.photo_id = likes_by_users.photo_id
+);
+
+-- Average percentage of likes by bots and likes by users on photos
+SELECT
+	AVG(pct_of_bot_likes) AS avg_pct_of_bot_likes,
+    AVG(pct_of_user_likes) AS avg_pct_of_user_likes
+FROM user_bot_likes;
+
 -- c) Find which accounts (if any) implement the use of bots.
 
 -- Section 6: Year by Year Analysis
