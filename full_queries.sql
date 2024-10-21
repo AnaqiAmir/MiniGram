@@ -387,7 +387,7 @@ SELECT AVG(total_engagement) FROM user_non_influencer_engagement;
 
 DROP VIEW suspected_bots;
 CREATE VIEW suspected_bots AS (
-	SELECT 
+	SELECT
 		users.id,
         users.username
 	FROM users
@@ -397,6 +397,24 @@ CREATE VIEW suspected_bots AS (
 );
 
 -- a) When are the bots most active?
+SELECT YEAR(likes.created_at) AS year, COUNT(*) AS total
+FROM likes
+WHERE user_id IN (SELECT id FROM suspected_bots)
+GROUP BY year
+ORDER BY total DESC;
+
+SELECT MONTHNAME(likes.created_at) AS month, COUNT(*) AS total
+FROM likes
+WHERE user_id IN (SELECT id FROM suspected_bots)
+GROUP BY month
+ORDER BY total DESC;
+
+SELECT DAYNAME(likes.created_at) AS day, COUNT(*) AS total
+FROM likes
+WHERE user_id IN (SELECT id FROM suspected_bots)
+GROUP BY day
+ORDER BY total DESC;
+
 SELECT HOUR(likes.created_at) AS hour, COUNT(*) AS total
 FROM likes
 WHERE user_id IN (SELECT id FROM suspected_bots)
