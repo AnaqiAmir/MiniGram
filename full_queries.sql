@@ -311,11 +311,19 @@ GROUP BY tag_name
 ORDER BY total DESC;
 
 -- b) What is the ideal time for a user to post content?
+WITH photo_with_most_engagements AS (  -- Filter to find photos with most engagements
+
+	SELECT *
+    FROM photo_engagements
+    WHERE engagement >= 100
+
+)
+
 SELECT
 	HOUR(photos.created_at) AS hour,
     COUNT(*) AS total
 FROM photos
-WHERE id IN (SELECT photo_id FROM photo_engagements)
+WHERE id IN (SELECT photo_id FROM photo_with_most_engagements)
 GROUP BY hour
 ORDER BY total DESC;
 
