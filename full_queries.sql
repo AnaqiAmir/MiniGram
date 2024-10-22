@@ -327,9 +327,6 @@ WHERE id IN (SELECT photo_id FROM photo_with_most_engagements)
 GROUP BY hour
 ORDER BY total DESC;
 
--- Cleaning views
-DROP VIEW photo_engagements;
-
 -- Section 4: Influencers
 -- Influencers are defined as users who have >10% of all users as their followers
 
@@ -347,153 +344,156 @@ CREATE VIEW influencers AS (
 );
 
 -- a) What types of content do influencers post compared to non-influencers?
+
+-- Types of content for influencers
+WITH influencer_photos AS (
+
+	SELECT *
+    FROM photos
+    WHERE photos.user_id IN (SELECT id FROM influencers)
+
+)
 SELECT
 	tags.tag_name,
     COUNT(*) AS total
-FROM (
-	SELECT * FROM photos
-    WHERE photos.user_id IN (SELECT id FROM influencers)
-) AS photo_temp
-JOIN photo_tags ON photo_temp.id = photo_tags.photo_id
+FROM influencer_photos
+JOIN photo_tags ON influencer_photos.id = photo_tags.photo_id
 JOIN tags ON photo_tags.tag_id = tags.id
 GROUP BY tag_name
 ORDER BY total DESC;
 
+-- Types of content for non-influencers
+WITH non_influencer_photos AS (
+
+	SELECT *
+    FROM photos
+    WHERE photos.user_id NOT IN (SELECT id FROM influencers)
+
+)
 SELECT
 	tags.tag_name,
     COUNT(*) AS total
-FROM (
-	SELECT * FROM photos
-    WHERE photos.user_id NOT IN (SELECT id FROM influencers)
-) AS photo_temp
-JOIN photo_tags ON photo_temp.id = photo_tags.photo_id
+FROM non_influencer_photos
+JOIN photo_tags ON non_influencer_photos.id = photo_tags.photo_id
 JOIN tags ON photo_tags.tag_id = tags.id
 GROUP BY tag_name
 ORDER BY total DESC;
 
 -- b) Find the difference in activity between influencers and non-influencers.
 -- i) activity
-SELECT
-	AVG(activity) AS avg_influencer_activity
-FROM (
+-- Average activity of influencers
+WITH influencer_activity AS (
 	SELECT *
 	FROM user_activity
 	WHERE id IN (SELECT id FROM influencers)
-	ORDER BY activity DESC
-) AS a;
+)
+SELECT AVG(activity) AS avg_influencer_activity
+FROM influencer_activity;
 
-SELECT
-	AVG(activity) AS avg_non_influencer_activity
-FROM (
+-- Average activity of non-influencers
+WITH non_influencer_activity AS (
 	SELECT *
-	FROM user_activity
-	WHERE
-		id NOT IN (SELECT id FROM influencers) AND
-        activity < 1000
-	ORDER BY activity DESC
-) AS a;
+    FROM user_activity
+    WHERE id NOT IN (SELECT id FROM influencers) -- AND activity<1000  <---- if you want to exclude bots
+)
+SELECT AVG(activity) AS avg_non_influencer_activity
+FROM non_influencer_activity;
 
 -- ii) activity rate
-SELECT
-	AVG(activity_rate) AS avg_influencer_activity_rate
-FROM (
+-- Average activity rate of influencers
+WITH influencer_activity_rate AS (
 	SELECT *
 	FROM user_activity_rate
 	WHERE id IN (SELECT id FROM influencers)
-	ORDER BY activity DESC
-) AS a;
+)
+SELECT AVG(activity_rate) AS avg_influencer_activity_rate
+FROM influencer_activity_rate;
 
-SELECT
-	AVG(activity_rate) AS avg_non_influencer_activity_rate
-FROM (
+-- Average activity rate of non-influencers
+WITH non_influencer_activity_rate AS (
 	SELECT *
 	FROM user_activity_rate
-	WHERE id NOT IN (SELECT id FROM influencers)
-	ORDER BY activity DESC
-) AS a;
+	WHERE id NOT IN (SELECT id FROM influencers)  -- AND activity<1000  <---- if you want to exclude bots
+)
+SELECT AVG(activity_rate) AS avg_non_influencer_activity_rate
+FROM non_influencer_activity_rate;
 
 -- c) How do influencers impact other users' engagement on MiniGram?
 -- Find which users engage the most with influencers
 
-CREATE VIEW user_influencer_likes AS (
+-- The engagement of each user-influencer pair
+CREATE VIEW engagement_by_user_influencer_pair AS (
+	WITH likes_by_user_influencer_pair AS (
+		SELECT
+			likes.user_id AS user_id,
+			photos.user_id AS influencer,
+			COUNT(*) AS total_likes
+		FROM likes
+		JOIN photos ON likes.photo_id = photos.id
+		GROUP BY user_id, influencer
+		HAVING influencer IN (SELECT id FROM influencers)
+	),
+	comments_by_user_influencer_pair AS (
+		SELECT
+			comments.user_id AS user_id,
+			photos.user_id AS influencer,
+			COUNT(*) AS total_comments
+		FROM comments
+		JOIN photos ON comments.photo_id = photos.id
+		GROUP BY user_id, influencer
+		HAVING influencer IN (SELECT id FROM influencers)
+	)
 	SELECT
-		likes.user_id AS user_id,
-        photos.user_id AS influencer,
-        COUNT(*) AS total_likes
-	FROM likes
-	JOIN photos ON likes.photo_id = photos.id
-	GROUP BY user_id, influencer
-	HAVING influencer in (SELECT id FROM influencers)
-	ORDER BY total_likes DESC
-);
-
-CREATE VIEW user_influencer_comments AS (
-	SELECT
-		comments.user_id AS user_id,
-        photos.user_id AS influencer,
-        COUNT(*) AS total_comments
-	FROM comments
-	JOIN photos ON comments.photo_id = photos.id
-	GROUP BY user_id, influencer
-	HAVING influencer in (SELECT id FROM influencers)
-	ORDER BY total_comments DESC
-);
-
-CREATE VIEW user_influencer_engagement AS (
-	SELECT
-		user_influencer_likes.user_id,
-		user_influencer_likes.influencer,
+		likes_by_pair.user_id,
+		likes_by_pair.influencer,
 		total_likes,
 		total_comments,
-		total_likes + total_comments AS total_engagement
-	FROM user_influencer_likes
-	JOIN user_influencer_comments ON
-		user_influencer_likes.user_id = user_influencer_comments.user_id AND
-		user_influencer_likes.influencer = user_influencer_comments.influencer
+		(total_likes + total_comments*1.5) AS total_engagement
+	FROM likes_by_user_influencer_pair AS likes_by_pair
+	JOIN comments_by_user_influencer_pair AS comments_by_pair ON
+		likes_by_pair.user_id = comments_by_pair.user_id AND
+		likes_by_pair.influencer = comments_by_pair.influencer
 	ORDER BY total_engagement DESC
 );
 
-CREATE VIEW user_non_influencer_likes AS (
+-- The engagement of each user-noninfluencer pair
+CREATE VIEW engagement_by_user_non_influencer_pair AS (
+	WITH likes_by_user_non_influencer_pair AS (
+		SELECT
+			likes.user_id AS user_id,
+			photos.user_id AS non_influencer,
+			COUNT(*) AS total_likes
+		FROM likes
+		JOIN photos ON likes.photo_id = photos.id
+		GROUP BY user_id, non_influencer
+		HAVING non_influencer NOT IN (SELECT id FROM influencers)
+	),
+	comments_by_user_non_influencer_pair AS (
+		SELECT
+			comments.user_id AS user_id,
+			photos.user_id AS non_influencer,
+			COUNT(*) AS total_comments
+		FROM comments
+		JOIN photos ON comments.photo_id = photos.id
+		GROUP BY user_id, non_influencer
+		HAVING non_influencer NOT IN (SELECT id FROM influencers)
+	)
 	SELECT
-		likes.user_id AS user_id,
-        photos.user_id AS non_influencer,
-        COUNT(*) AS total_likes
-	FROM likes
-	JOIN photos ON likes.photo_id = photos.id
-	GROUP BY user_id, non_influencer
-	HAVING non_influencer NOT IN (SELECT id FROM influencers)
-	ORDER BY total_likes DESC
-);
-
-CREATE VIEW user_non_influencer_comments AS (
-	SELECT
-		comments.user_id AS user_id,
-        photos.user_id AS non_influencer,
-        COUNT(*) AS total_comments
-	FROM comments
-	JOIN photos ON comments.photo_id = photos.id
-	GROUP BY user_id, non_influencer
-	HAVING non_influencer NOT IN (SELECT id FROM influencers)
-	ORDER BY total_comments DESC
-);
-
-CREATE VIEW user_non_influencer_engagement AS (
-	SELECT
-		user_non_influencer_likes.user_id,
-		user_non_influencer_likes.non_influencer,
+		likes_by_pair.user_id,
+		likes_by_pair.non_influencer,
 		total_likes,
 		total_comments,
-		total_likes + total_comments AS total_engagement
-	FROM user_non_influencer_likes
-	JOIN user_non_influencer_comments ON
-		user_non_influencer_likes.user_id = user_non_influencer_comments.user_id AND
-		user_non_influencer_likes.non_influencer = user_non_influencer_comments.non_influencer
+		(total_likes + total_comments*1.5) AS total_engagement
+	FROM likes_by_user_non_influencer_pair AS likes_by_pair
+	JOIN comments_by_user_non_influencer_pair AS comments_by_pair ON
+		likes_by_pair.user_id = comments_by_pair.user_id AND
+		likes_by_pair.non_influencer = comments_by_pair.non_influencer
 	ORDER BY total_engagement DESC
 );
 
 -- Average engagement of users towards influencers and non-influencers
-SELECT AVG(total_engagement) FROM user_influencer_engagement;
-SELECT AVG(total_engagement) FROM user_non_influencer_engagement;
+SELECT AVG(total_engagement) FROM engagement_by_user_influencer_pair;
+SELECT AVG(total_engagement) FROM engagement_by_user_non_influencer_pair;
 
 -- Conduct t-test after
 
