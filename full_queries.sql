@@ -244,8 +244,10 @@ DROP VIEW inactive_users;
 -- Section 3: Posts and Content
 -- a) Which types of content typically receive the most engagement?
 -- Engagement = # of likes + (# of comments)*1.5 <----- Comments are worth more
+
+-- Table that displays total engagement of photos
 DROP VIEW photo_engagements;
-CREATE VIEW photo_engagements AS (  -- Table that displays total engagement of photos
+CREATE VIEW photo_engagements AS (
 	WITH photo_likes AS (
 
 		SELECT
@@ -282,6 +284,7 @@ CREATE VIEW photo_engagements AS (  -- Table that displays total engagement of p
 
 SELECT * FROM photo_engagements;
 
+-- Query which tags are associated with the most engaged photos
 WITH photo_with_most_engagements AS (  -- Filter to find photos with most engagements
 
 	SELECT *
@@ -312,12 +315,12 @@ SELECT
 	HOUR(photos.created_at) AS hour,
     COUNT(*) AS total
 FROM photos
-WHERE id IN (SELECT photo_id FROM photo_engagement)
+WHERE id IN (SELECT photo_id FROM photo_engagements)
 GROUP BY hour
 ORDER BY total DESC;
 
 -- Cleaning views
-DROP VIEW photo_engagement;
+DROP VIEW photo_engagements;
 
 -- Section 4: Influencers
 -- Influencers are defined as users who have >10% of all users as their followers
