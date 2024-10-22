@@ -627,3 +627,14 @@ SELECT * FROM yoy_analysis;
 -- b) Is there an increase in the rate of user and content growth from year to year?
 -- Find the percentage increase from previous year
 
+SELECT
+	year,
+    total_photos,
+    (LEAD(total_photos) OVER() - total_photos) / total_photos AS photos_pct_diff,
+    total_likes,
+    (LEAD(total_likes) OVER() - total_likes) / total_likes AS likes_pct_diff,
+    total_comments,
+    (LEAD(total_comments) OVER() - total_comments) / total_comments AS comments_pct_diff,
+    total,
+	(LEAD(total) OVER() - total) / total AS pct_diff
+FROM yoy_analysis;
