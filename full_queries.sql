@@ -244,47 +244,66 @@ DROP VIEW inactive_users;
 -- Section 3: Posts and Content
 -- a) Which types of content typically receive the most engagement?
 -- Engagement = # of likes + (# of comments)*1.5 <----- Comments are worth more
-DROP VIEW photo_engagement;
-CREATE VIEW photo_engagement AS (
-	SELECT
-		photo_likes.id AS photo_id,
-        total_likes,
-        total_comments,
-        (total_likes + (1.5*total_comments)) AS engagement
-	FROM (
+DROP VIEW photo_engagements;
+CREATE VIEW photo_engagements AS (  -- Table that displays total engagement of photos
+	WITH photo_likes AS (
+
 		SELECT
 			photos.id,
-            COUNT(*) AS total_likes
+			COUNT(*) AS total_likes
 		FROM photos
 		JOIN likes ON photos.id = likes.photo_id
 		GROUP BY photos.id
 		ORDER BY total_likes DESC
-	) AS photo_likes
-	JOIN (
+
+	),
+
+	photo_comments AS (
+
 		SELECT
 			photos.id,
-            COUNT(*) AS total_comments
+			COUNT(*) AS total_comments
 		FROM photos
 		JOIN comments ON photos.id = comments.photo_id
 		GROUP BY photos.id
 		ORDER BY total_comments DESC
-	) AS photo_comments
-	ON photo_likes.id = photo_comments.id
-	HAVING engagement >= 100
+
+	)
+
+	SELECT
+		photo_likes.id AS photo_id,
+		total_likes,
+		total_comments,
+		(total_likes + (1.5*total_comments)) AS engagement
+	FROM photo_likes
+	JOIN photo_comments ON photo_likes.id = photo_comments.id
 	ORDER BY engagement DESC
 );
 
-SELECT
-	tag_name,
-    COUNT(*) AS total
-FROM (
+SELECT * FROM photo_engagements;
+
+WITH photo_with_most_engagements AS (  -- Filter to find photos with most engagements
+
+	SELECT *
+    FROM photo_engagements
+    WHERE engagement >= 100
+
+),
+
+photo_to_tag_name AS (  -- Associating photos to tags
+
 	SELECT
 		photo_tags.photo_id,
         tags.tag_name
 	FROM photo_tags
-	JOIN tags ON photo_tags.tag_id = tags.id
-	HAVING photo_id IN (SELECT photo_id FROM photo_engagement)
-) AS a
+    JOIN tags ON photo_tags.tag_id = tags.id
+    HAVING photo_id IN (SELECT photo_id FROM photo_with_most_engagements)  -- Only look at photos with high engagement
+)
+
+SELECT
+	tag_name,
+    COUNT(*) AS total
+FROM photo_to_tag_name
 GROUP BY tag_name
 ORDER BY total DESC;
 
