@@ -575,4 +575,55 @@ ORDER BY pct_liked_by_bots DESC;
 
 -- Section 6: Year by Year Analysis
 -- a) Compare the amount of posts/likes/comments from year to year
+
+CREATE VIEW yoy_analysis AS (
+	WITH photos_by_year AS (
+
+		SELECT
+			YEAR(photos.created_at) AS year,
+			COUNT(*) AS total_photos
+		FROM photos
+		GROUP BY year
+		ORDER BY year
+
+	),
+
+	likes_by_year AS (
+
+		SELECT
+			YEAR(likes.created_at) AS year,
+			COUNT(*) AS total_likes
+		FROM likes
+		GROUP BY year
+		ORDER BY year
+
+	),
+
+	comments_by_year AS (
+
+		SELECT
+			YEAR(comments.created_at) AS year,
+			COUNT(*) AS total_comments
+		FROM comments
+		GROUP BY year
+		ORDER BY year
+
+	)
+
+	SELECT
+		photos_by_year.year AS year,
+		total_photos,
+		total_likes,
+		total_comments,
+		total_photos + total_likes + total_comments AS total
+	FROM photos_by_year
+	JOIN likes_by_year ON photos_by_year.year = likes_by_year.year
+	JOIN comments_by_year ON photos_by_year.year = comments_by_year.year
+	ORDER BY year
+);
+
+SELECT * FROM yoy_analysis;
+
 -- b) Is there an increase in the rate of user and content growth from year to year?
+-- Find the percentage increase from previous year
+
