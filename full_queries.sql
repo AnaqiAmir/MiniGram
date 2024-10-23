@@ -128,6 +128,44 @@ CREATE VIEW active_users AS (
         days_on_minigram > 10  -- exclude brand new users
 );
 
+WITH active_users_by_activity AS (
+	SELECT *
+    FROM user_activity
+    WHERE
+		activity < 1000 AND  -- exclude bots
+		activity > 150  -- active users
+),
+active_users_by_activity_rate AS (
+	SELECT *
+    FROM user_activity
+    WHERE
+		activity_rate >= 1 AND  -- active users
+        activity < 1000 AND  -- exclude bots
+        days_on_minigram > 10  -- exclude brand new users
+)
+SELECT
+	DAYNAME(photos.created_at) AS day,
+    COUNT(active_users_by_activity.id) AS total_by_activity,
+    COUNT(active_users_by_activity_rate.id) AS total_by_activity_rate
+FROM users
+JOIN photos ON users.id = photos.user_id
+GROUP BY day
+ORDER BY total DESC;
+
+-- ChatGPT test
+SELECT
+    COALESCE(t1.day, t2.day) AS day,
+    COUNT(t1.id) AS count_t1,
+    COUNT(t2.id) AS count_t2
+FROM
+    (SELECT day, id FROM active_users_by_activity) t1
+FULL OUTER JOIN
+    (SELECT day, id FROM active_users_by_activity_rate) t2
+ON t1.day = t2.day
+GROUP BY COALESCE(t1.day, t2.day)
+ORDER BY day;
+
+
 -- Photos posted by active users by day
 SELECT
 	DAYNAME(photos.created_at) AS day,
