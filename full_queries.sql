@@ -54,8 +54,9 @@ ORDER BY hour;
 CREATE VIEW user_activity AS (
 	WITH user_photos AS (
 		SELECT
-			users.id, username,
-			COUNT(*) AS num_of_photos
+			users.id,
+            users.username,
+			COUNT(photos.id) AS num_of_photos
 		FROM users
 		LEFT OUTER JOIN photos ON users.id = photos.user_id
 		GROUP BY users.id, username
@@ -64,7 +65,7 @@ CREATE VIEW user_activity AS (
 		SELECT
 			id,
 			username,
-			COUNT(*) AS num_of_likes
+			COUNT(likes.photo_id) AS num_of_likes
 		FROM users
 		LEFT OUTER JOIN likes ON users.id = likes.user_id
 		GROUP BY id, username
@@ -73,7 +74,7 @@ CREATE VIEW user_activity AS (
 		SELECT
 			users.id,
 			username,
-			COUNT(*) AS num_of_comments
+			COUNT(comments.id) AS num_of_comments
 		FROM users
 		LEFT OUTER JOIN comments ON users.id = comments.user_id
 		GROUP BY users.id, username
@@ -82,7 +83,7 @@ CREATE VIEW user_activity AS (
 		SELECT
 			users.id,
 			username,
-			COUNT(*) AS num_of_followings
+			COUNT(follows.followee_id) AS num_of_followings
 		FROM users
 		LEFT OUTER JOIN follows ON users.id = follows.follower_id
 		GROUP BY users.id, username
@@ -95,8 +96,8 @@ CREATE VIEW user_activity AS (
         num_of_comments,
         num_of_followings,
         (num_of_photos + num_of_likes + num_of_comments + num_of_followings) AS activity,
-        DATEDIFF(NOW(), users.created_at) AS days_on_minigram,
-		(num_of_photos + num_of_likes + num_of_comments + num_of_followings) / DATEDIFF(NOW(), users.created_at) AS activity_rate
+        DATEDIFF("2025-01-01 00:00:00", users.created_at) AS days_on_minigram,
+		(num_of_photos + num_of_likes + num_of_comments + num_of_followings) / DATEDIFF("2025-01-01 00:00:00", users.created_at) AS activity_rate
 	FROM users
 	JOIN user_photos ON users.id = user_photos.id
 	JOIN user_likes ON users.id = user_likes.id
