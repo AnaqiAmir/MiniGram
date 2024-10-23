@@ -51,59 +51,52 @@ ORDER BY hour;
 -- i ) activity = # of photos + # of likes + # of comments + # of followings
 -- ii) activity_rate = (# of photos + # of likes + # of comments + # of followings) / # of days since the user registered
 
-CREATE VIEW user_photos AS (
-	SELECT
-		users.id, username,
-        COUNT(*) AS num_of_photos
-	FROM users
-	LEFT OUTER JOIN photos ON users.id = photos.user_id
-	GROUP BY users.id, username
-	ORDER BY num_of_photos DESC
-);
-
-CREATE VIEW user_likes AS (
-	SELECT
-		id,
-        username,
-        COUNT(*) AS num_of_likes
-	FROM users
-	LEFT OUTER JOIN likes ON users.id = likes.user_id
-	GROUP BY id, username
-	ORDER BY num_of_likes DESC
-);
-
-CREATE VIEW user_comments AS (
-	SELECT
-		users.id,
-        username,
-        COUNT(*) AS num_of_comments
-	FROM users
-	LEFT OUTER JOIN comments ON users.id = comments.user_id
-	GROUP BY users.id, username
-	ORDER BY num_of_comments DESC
-);
-
-CREATE VIEW user_followings AS (
-	SELECT
-		users.id,
-		username,
-        COUNT(*) AS num_of_followings
-	FROM users
-	LEFT OUTER JOIN follows ON users.id = follows.follower_id
-	GROUP BY users.id, username
-	ORDER BY num_of_followings DESC
-);
-
--- Activity (note that users with activity>1000 are suspected bots)
-CREATE VIEW user_activity AS (
-	SELECT
+CREATE VIEW user_activity_test AS (
+	WITH user_photos AS (
+		SELECT
+			users.id, username,
+			COUNT(*) AS num_of_photos
+		FROM users
+		LEFT OUTER JOIN photos ON users.id = photos.user_id
+		GROUP BY users.id, username
+	),
+    user_likes AS (
+		SELECT
+			id,
+			username,
+			COUNT(*) AS num_of_likes
+		FROM users
+		LEFT OUTER JOIN likes ON users.id = likes.user_id
+		GROUP BY id, username
+	),
+    user_comments AS (
+		SELECT
+			users.id,
+			username,
+			COUNT(*) AS num_of_comments
+		FROM users
+		LEFT OUTER JOIN comments ON users.id = comments.user_id
+		GROUP BY users.id, username
+	),
+    user_followings AS (
+		SELECT
+			users.id,
+			username,
+			COUNT(*) AS num_of_followings
+		FROM users
+		LEFT OUTER JOIN follows ON users.id = follows.follower_id
+		GROUP BY users.id, username
+	)
+    SELECT
 		users.id,
 		users.username,
         num_of_photos,
         num_of_likes,
         num_of_comments,
         num_of_followings,
-        (num_of_photos + num_of_likes + num_of_comments + num_of_followings) AS activity
+        (num_of_photos + num_of_likes + num_of_comments + num_of_followings) AS activity,
+        DATEDIFF(NOW(), users.created_at) AS days_on_minigram,
+		(num_of_photos + num_of_likes + num_of_comments + num_of_followings) / DATEDIFF(NOW(), users.created_at) AS activity_rate
 	FROM users
 	JOIN user_photos ON users.id = user_photos.id
 	JOIN user_likes ON users.id = user_likes.id
@@ -113,38 +106,28 @@ CREATE VIEW user_activity AS (
 	ORDER BY activity DESC
 );
 
--- Activity rate
-CREATE VIEW user_activity_rate AS (
-	SELECT
-		users.id, users.username,
-		activity,
-		DATEDIFF(NOW(), users.created_at) AS days_on_minigram,
-		activity / DATEDIFF(NOW(), users.created_at) AS activity_rate
-	FROM users
-	JOIN user_activity ON users.id = user_activity.id
-	ORDER BY activity_rate DESC
-);
-
 -- Active users (by activity) (excludes bots)
 DROP VIEW active_users;
 CREATE VIEW active_users AS (
-	SELECT * FROM user_activity
+	SELECT *
+    FROM user_activity
     WHERE
-		activity < 1000 AND
-		activity > 150
+		activity < 1000 AND  -- exclude bots
+		activity > 150  -- active users
 );
 
 -- Active users (by activity rate) (excludes suspected bots and new users)
 DROP VIEW active_users;
 CREATE VIEW active_users AS (
-	SELECT * FROM user_activity_rate
+	SELECT *
+    FROM user_activity
     WHERE
-		activity_rate >= 1 AND
-        activity < 1000
-        AND days_on_minigram > 10
+		activity_rate >= 1 AND  -- active users
+        activity < 1000 AND  -- exclude bots
+        days_on_minigram > 10  -- exclude brand new users
 );
 
--- Active user activities by day
+-- Photos posted by active users by day
 SELECT
 	DAYNAME(photos.created_at) AS day,
     COUNT(*) AS total
@@ -154,6 +137,7 @@ WHERE users.id IN (SELECT id FROM active_users)
 GROUP BY day
 ORDER BY total DESC;
 
+-- Likes posted by active users by day
 SELECT
 	DAYNAME(likes.created_at) AS day,
     COUNT(*) AS total
@@ -163,6 +147,7 @@ WHERE users.id IN (SELECT id FROM active_users)
 GROUP BY day
 ORDER BY total DESC;
 
+-- Comments posted by active users by day
 SELECT
 	DAYNAME(comments.created_at) AS day,
     COUNT(*) AS total
@@ -172,6 +157,7 @@ WHERE users.id IN (SELECT id FROM active_users)
 GROUP BY day
 ORDER BY total DESC;
 
+-- Follows by active users by day
 SELECT
 	DAYNAME(follows.created_at) AS day,
     COUNT(*) AS total
@@ -184,17 +170,19 @@ ORDER BY total DESC;
 -- c) Which users are the most inactive? When are they most active?
 DROP VIEW inactive_users;
 CREATE VIEW inactive_users AS (
-	SELECT * FROM user_activity
-    WHERE activity <= 150
+	SELECT *
+    FROM user_activity
+    WHERE activity <= 150 -- inactive users
 );
 
 DROP VIEW inactive_users;
 CREATE VIEW inactive_users AS (
-	SELECT * FROM user_activity_rate
-    WHERE activity_rate <= 0.05
+	SELECT *
+    FROM user_activity_rate
+    WHERE activity_rate <= 0.05 -- inactive users
 );
 
--- Inactive user activities by day
+-- Photos posted by inactive users by day
 SELECT
 	DAYNAME(photos.created_at) AS day,
     COUNT(*) AS total
@@ -204,6 +192,7 @@ WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
 ORDER BY total DESC;
 
+-- Likes posted by inactive users by day
 SELECT
 	DAYNAME(likes.created_at) AS day,
     COUNT(*) AS total
@@ -213,6 +202,7 @@ WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
 ORDER BY total DESC;
 
+-- Comments posted by inactive users by day
 SELECT
 	DAYNAME(comments.created_at) AS day,
     COUNT(*) AS total
@@ -222,6 +212,7 @@ WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
 ORDER BY total DESC;
 
+-- Follows by inactive users by day
 SELECT
 	DAYNAME(follows.created_at) AS day,
     COUNT(*) AS total
