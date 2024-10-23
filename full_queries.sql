@@ -8,7 +8,7 @@ SELECT COUNT(*) FROM photos;
 -- c) What is the average post per user?
 SELECT (
 	(SELECT COUNT(*) FROM photos) / (SELECT COUNT(*) FROM users)
-) as avg_photo_per_user;
+) AS avg_photo_per_user;
 
 -- d) What is the average amount of likes per post?
 SELECT (
