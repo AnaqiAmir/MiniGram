@@ -51,7 +51,7 @@ ORDER BY hour;
 -- i ) activity = # of photos + # of likes + # of comments + # of followings
 -- ii) activity_rate = (# of photos + # of likes + # of comments + # of followings) / # of days since the user registered
 
-CREATE VIEW user_activity_test AS (
+CREATE VIEW user_activity AS (
 	WITH user_photos AS (
 		SELECT
 			users.id, username,
@@ -222,16 +222,6 @@ WHERE users.id IN (SELECT id FROM inactive_users)
 GROUP BY day
 ORDER BY total DESC;
 
--- Cleaning views
-DROP VIEW user_activity;
-DROP VIEW user_activity_rate;
-DROP VIEW user_photos;
-DROP VIEW user_likes;
-DROP VIEW user_comments;
-DROP VIEW user_followings;
-DROP VIEW active_users;
-DROP VIEW inactive_users;
-
 -- Section 3: Posts and Content
 -- a) Which types of content typically receive the most engagement?
 -- Engagement = # of likes + (# of comments)*1.5 <----- Comments are worth more
@@ -240,7 +230,6 @@ DROP VIEW inactive_users;
 DROP VIEW photo_engagements;
 CREATE VIEW photo_engagements AS (
 	WITH photo_likes AS (
-
 		SELECT
 			photos.id,
 			COUNT(*) AS total_likes
@@ -248,11 +237,8 @@ CREATE VIEW photo_engagements AS (
 		JOIN likes ON photos.id = likes.photo_id
 		GROUP BY photos.id
 		ORDER BY total_likes DESC
-
 	),
-
 	photo_comments AS (
-
 		SELECT
 			photos.id,
 			COUNT(*) AS total_comments
@@ -260,9 +246,7 @@ CREATE VIEW photo_engagements AS (
 		JOIN comments ON photos.id = comments.photo_id
 		GROUP BY photos.id
 		ORDER BY total_comments DESC
-
 	)
-
 	SELECT
 		photo_likes.id AS photo_id,
 		total_likes,
@@ -277,15 +261,11 @@ SELECT * FROM photo_engagements;
 
 -- Query which tags are associated with the most engaged photos
 WITH photo_with_most_engagements AS (  -- Filter to find photos with most engagements
-
 	SELECT *
     FROM photo_engagements
     WHERE engagement >= 100
-
 ),
-
 photo_to_tag_name AS (  -- Associating photos to tags
-
 	SELECT
 		photo_tags.photo_id,
         tags.tag_name
@@ -293,7 +273,6 @@ photo_to_tag_name AS (  -- Associating photos to tags
     JOIN tags ON photo_tags.tag_id = tags.id
     HAVING photo_id IN (SELECT photo_id FROM photo_with_most_engagements)  -- Only look at photos with high engagement
 )
-
 SELECT
 	tag_name,
     COUNT(*) AS total
@@ -303,13 +282,10 @@ ORDER BY total DESC;
 
 -- b) What is the ideal time for a user to post content?
 WITH photo_with_most_engagements AS (  -- Filter to find photos with most engagements
-
 	SELECT *
     FROM photo_engagements
     WHERE engagement >= 100
-
 )
-
 SELECT
 	HOUR(photos.created_at) AS hour,
     COUNT(*) AS total
@@ -338,11 +314,9 @@ CREATE VIEW influencers AS (
 
 -- Types of content for influencers
 WITH influencer_photos AS (
-
 	SELECT *
     FROM photos
     WHERE photos.user_id IN (SELECT id FROM influencers)
-
 )
 SELECT
 	tags.tag_name,
@@ -355,11 +329,9 @@ ORDER BY total DESC;
 
 -- Types of content for non-influencers
 WITH non_influencer_photos AS (
-
 	SELECT *
     FROM photos
     WHERE photos.user_id NOT IN (SELECT id FROM influencers)
-
 )
 SELECT
 	tags.tag_name,
@@ -540,27 +512,21 @@ ORDER BY total DESC;
 
 CREATE VIEW user_bot_likes AS (
 	WITH likes_by_bots AS (
-
 		SELECT
 			photo_id,
 			COUNT(*) AS bot_likes
 		FROM likes
 		WHERE user_id IN (SELECT id FROM suspected_bots)
 		GROUP BY photo_id
-
 	),
-
 	likes_by_users AS (
-
 		SELECT
 			photo_id,
 			COUNT(*) AS user_likes
 		FROM likes
 		WHERE user_id NOT IN (SELECT id FROM suspected_bots)
 		GROUP BY photo_id
-
 	)
-
 	SELECT
 		likes_by_bots.photo_id,
 		likes_by_bots.bot_likes,
@@ -599,38 +565,29 @@ ORDER BY pct_liked_by_bots DESC;
 
 CREATE VIEW yoy_analysis AS (
 	WITH photos_by_year AS (
-
 		SELECT
 			YEAR(photos.created_at) AS year,
 			COUNT(*) AS total_photos
 		FROM photos
 		GROUP BY year
 		ORDER BY year
-
 	),
-
 	likes_by_year AS (
-
 		SELECT
 			YEAR(likes.created_at) AS year,
 			COUNT(*) AS total_likes
 		FROM likes
 		GROUP BY year
 		ORDER BY year
-
 	),
-
 	comments_by_year AS (
-
 		SELECT
 			YEAR(comments.created_at) AS year,
 			COUNT(*) AS total_comments
 		FROM comments
 		GROUP BY year
 		ORDER BY year
-
 	)
-
 	SELECT
 		photos_by_year.year AS year,
 		total_photos,
