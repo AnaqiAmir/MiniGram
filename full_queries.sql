@@ -156,7 +156,7 @@ CREATE VIEW target_users AS (
 	SELECT * FROM inactive_users_by_activity
 );
 
--- Photos posted by active users by day
+-- Photos posted by target users by day
 SELECT
 	DAYNAME(photos.created_at) AS day,
     COUNT(*) AS total
@@ -166,7 +166,7 @@ WHERE users.id IN (SELECT id FROM target_users)
 GROUP BY day
 ORDER BY total DESC;
 
--- Likes posted by active users by day
+-- Likes posted by target users by day
 SELECT
 	DAYNAME(likes.created_at) AS day,
     COUNT(*) AS total
@@ -176,7 +176,7 @@ WHERE users.id IN (SELECT id FROM target_users)
 GROUP BY day
 ORDER BY total DESC;
 
--- Comments posted by active users by day
+-- Comments posted by target users by day
 SELECT
 	DAYNAME(comments.created_at) AS day,
     COUNT(*) AS total
@@ -186,7 +186,7 @@ WHERE users.id IN (SELECT id FROM target_users)
 GROUP BY day
 ORDER BY total DESC;
 
--- Follows by active users by day
+-- Follows by target users by day
 SELECT
 	DAYNAME(follows.created_at) AS day,
     COUNT(*) AS total
