@@ -310,10 +310,10 @@ CREATE VIEW influencers AS (
 		users.id,
         users.username,
         users.created_at,
-        COUNT(*) AS num_of_followers
+        COUNT(follows.followee_id) AS num_of_followers
 	FROM users
-	JOIN follows ON users.id = follows.followee_id
-	GROUP BY follows.followee_id
+	LEFT JOIN follows ON users.id = follows.followee_id
+	GROUP BY users.id
 	HAVING num_of_followers > (SELECT COUNT(*) FROM users)*0.1
 	ORDER BY num_of_followers DESC
 );
