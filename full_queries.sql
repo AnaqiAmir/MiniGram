@@ -242,20 +242,18 @@ CREATE VIEW photo_engagements AS (
 	WITH photo_likes AS (
 		SELECT
 			photos.id,
-			COUNT(*) AS total_likes
+			COUNT(likes.photo_id) AS total_likes
 		FROM photos
-		JOIN likes ON photos.id = likes.photo_id
+		LEFT JOIN likes ON photos.id = likes.photo_id
 		GROUP BY photos.id
-		ORDER BY total_likes DESC
 	),
 	photo_comments AS (
 		SELECT
 			photos.id,
-			COUNT(*) AS total_comments
+			COUNT(comments.photo_id) AS total_comments
 		FROM photos
-		JOIN comments ON photos.id = comments.photo_id
+		LEFT JOIN comments ON photos.id = comments.photo_id
 		GROUP BY photos.id
-		ORDER BY total_comments DESC
 	)
 	SELECT
 		photo_likes.id AS photo_id,
@@ -270,18 +268,18 @@ CREATE VIEW photo_engagements AS (
 SELECT * FROM photo_engagements;
 
 -- Query which tags are associated with the most engaged photos
-WITH photo_with_most_engagements AS (  -- Filter to find photos with most engagements
+WITH photos_with_most_engagements AS (  -- Filter to find photos with most engagements
 	SELECT *
     FROM photo_engagements
-    WHERE engagement >= 100
+    WHERE engagement >= 500 -- Around top 5% of photos
 ),
-photo_to_tag_name AS (  -- Associating photos to tags
+photo_to_tag_name AS (  -- Associating photos to their tags
 	SELECT
 		photo_tags.photo_id,
         tags.tag_name
 	FROM photo_tags
     JOIN tags ON photo_tags.tag_id = tags.id
-    HAVING photo_id IN (SELECT photo_id FROM photo_with_most_engagements)  -- Only look at photos with high engagement
+    HAVING photo_id IN (SELECT photo_id FROM photos_with_most_engagements)  -- Only look at photos with high engagement
 )
 SELECT
 	tag_name,
@@ -294,7 +292,7 @@ ORDER BY total DESC;
 WITH photo_with_most_engagements AS (  -- Filter to find photos with most engagements
 	SELECT *
     FROM photo_engagements
-    WHERE engagement >= 100
+    WHERE engagement >= 500
 )
 SELECT
 	HOUR(photos.created_at) AS hour,
