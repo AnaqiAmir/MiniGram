@@ -355,7 +355,7 @@ ORDER BY total DESC;
 -- Average activity of influencers
 WITH influencer_activity AS (
 	SELECT *
-	FROM user_activity
+	FROM user_activities
 	WHERE id IN (SELECT id FROM influencers)
 )
 SELECT AVG(activity) AS avg_influencer_activity
@@ -364,7 +364,7 @@ FROM influencer_activity;
 -- Average activity of non-influencers
 WITH non_influencer_activity AS (
 	SELECT *
-    FROM user_activity
+    FROM user_activities
     WHERE id NOT IN (SELECT id FROM influencers) -- AND activity<1000  <---- if you want to exclude bots
 )
 SELECT AVG(activity) AS avg_non_influencer_activity
@@ -374,7 +374,7 @@ FROM non_influencer_activity;
 -- Average activity rate of influencers
 WITH influencer_activity_rate AS (
 	SELECT *
-	FROM user_activity_rate
+	FROM user_activities
 	WHERE id IN (SELECT id FROM influencers)
 )
 SELECT AVG(activity_rate) AS avg_influencer_activity_rate
@@ -383,7 +383,7 @@ FROM influencer_activity_rate;
 -- Average activity rate of non-influencers
 WITH non_influencer_activity_rate AS (
 	SELECT *
-	FROM user_activity_rate
+	FROM user_activities
 	WHERE id NOT IN (SELECT id FROM influencers)  -- AND activity<1000  <---- if you want to exclude bots
 )
 SELECT AVG(activity_rate) AS avg_non_influencer_activity_rate
