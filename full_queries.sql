@@ -570,16 +570,32 @@ CREATE VIEW user_bot_likes AS (
 		FROM likes
 		WHERE user_id NOT IN (SELECT id FROM suspected_bots)
 		GROUP BY photo_id
+	),
+	full_join AS (  -- union left join and right join to emulate full join
+		SELECT
+			b.photo_id AS photo_id,
+			b.bot_likes AS bot_likes,
+			u.user_likes AS user_likes
+		FROM likes_by_bots AS b
+		LEFT JOIN likes_by_users AS u ON
+			b.photo_id = u.photo_id
+		UNION
+		SELECT
+			u.photo_id AS photo_id,
+			b.bot_likes AS bot_likes,
+			u.user_likes AS user_likes
+		FROM likes_by_bots AS b
+		RIGHT JOIN likes_by_users AS u ON
+			b.photo_id = u.photo_id
 	)
 	SELECT
-		likes_by_bots.photo_id,
-		likes_by_bots.bot_likes,
-		likes_by_users.user_likes,
-		likes_by_bots.bot_likes + likes_by_users.user_likes AS total_likes,
-        likes_by_bots.bot_likes / (likes_by_bots.bot_likes + likes_by_users.user_likes) AS pct_of_bot_likes,
-        likes_by_users.user_likes / (likes_by_bots.bot_likes + likes_by_users.user_likes) AS pct_of_user_likes
-	FROM likes_by_bots
-	INNER JOIN likes_by_users ON likes_by_bots.photo_id = likes_by_users.photo_id
+		full_join.photo_id,
+		COALESCE(full_join.bot_likes,0) AS bot_likes,  -- coalesce function turns NULLs into 0s
+		COALESCE(full_join.user_likes,0) AS user_likes,
+		COALESCE(full_join.bot_likes,0) + COALESCE(full_join.user_likes,0) AS total_likes,
+		COALESCE(full_join.bot_likes,0) / (COALESCE(full_join.bot_likes,0) + COALESCE(full_join.user_likes,0)) AS pct_of_bot_likes,
+		COALESCE(full_join.user_likes,0) / (COALESCE(full_join.bot_likes,0) + COALESCE(full_join.user_likes,0)) AS pct_of_user_likes
+	FROM full_join
 );
 
 -- Average percentage of likes by bots and likes by users on photos
@@ -601,7 +617,7 @@ FROM photos
 JOIN user_bot_likes ON photos.id = user_bot_likes.photo_id
 JOIN users ON photos.user_id = users.id
 GROUP BY user_id
-HAVING pct_liked_by_bots >= 0.5
+HAVING pct_liked_by_bots >= 0.5  -- find users where >50% of their likes are by bots
 ORDER BY pct_liked_by_bots DESC;
 
 -- Section 6: Year by Year Analysis
