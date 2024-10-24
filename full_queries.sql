@@ -598,8 +598,10 @@ CREATE VIEW user_bot_likes AS (
 	FROM full_join
 );
 
--- Average percentage of likes by bots and likes by users on photos
+-- Average likes and percentage of likes by bots and likes by users on photos
 SELECT
+	AVG(bot_likes) AS avg_bot_likes,
+    AVG(user_likes) AS avg_user_likes,
 	AVG(pct_of_bot_likes) AS avg_pct_of_bot_likes,
     AVG(pct_of_user_likes) AS avg_pct_of_user_likes
 FROM user_bot_likes;
