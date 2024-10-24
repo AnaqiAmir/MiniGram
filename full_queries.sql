@@ -394,77 +394,113 @@ FROM non_influencer_activity_rate;
 
 -- The engagement of each user-influencer pair
 CREATE VIEW engagement_by_user_influencer_pair AS (
-	WITH likes_by_user_influencer_pair AS (
+	WITH likes_by_user_influencer_pair AS (  -- find total likes from each user-to-influencer pair
 		SELECT
 			likes.user_id AS user_id,
-			photos.user_id AS influencer,
+			photos.user_id AS influencer_id,
 			COUNT(*) AS total_likes
 		FROM likes
-		JOIN photos ON likes.photo_id = photos.id
-		GROUP BY user_id, influencer
-		HAVING influencer IN (SELECT id FROM influencers)
+		INNER JOIN photos ON likes.photo_id = photos.id
+		GROUP BY user_id, influencer_id
+		HAVING influencer_id IN (SELECT id FROM influencers)
 	),
-	comments_by_user_influencer_pair AS (
+	comments_by_user_influencer_pair AS (  -- find total comments from each user-to-influencer pair
 		SELECT
 			comments.user_id AS user_id,
-			photos.user_id AS influencer,
+			photos.user_id AS influencer_id,
 			COUNT(*) AS total_comments
 		FROM comments
-		JOIN photos ON comments.photo_id = photos.id
-		GROUP BY user_id, influencer
-		HAVING influencer IN (SELECT id FROM influencers)
+		INNER JOIN photos ON comments.photo_id = photos.id
+		GROUP BY user_id, influencer_id
+		HAVING influencer_id IN (SELECT id FROM influencers)
+	),
+	full_join AS (  -- union a left join and right join to emulate a full join
+		SELECT
+			l.user_id AS user_id,
+			l.influencer_id AS influencer_id,
+			l.total_likes AS total_likes,
+			c.total_comments AS total_comments
+		FROM likes_by_user_influencer_pair AS l
+		LEFT JOIN comments_by_user_influencer_pair AS c ON -- left join from likes to comments
+			l.user_id = c.user_id AND
+			l.influencer_id = c.influencer_id
+		UNION  -- union removes duplicates
+		SELECT
+			c.user_id AS user_id,
+			c.influencer_id AS influencer_id,
+			l.total_likes AS total_likes,
+			c.total_comments AS total_comments
+		FROM likes_by_user_influencer_pair AS l
+		RIGHT JOIN comments_by_user_influencer_pair AS c ON  -- right join from likes to comments
+			l.user_id = c.user_id AND
+			l.influencer_id = c.influencer_id
 	)
 	SELECT
-		likes_by_pair.user_id,
-		likes_by_pair.influencer,
-		total_likes,
-		total_comments,
-		(total_likes + total_comments*1.5) AS total_engagement
-	FROM likes_by_user_influencer_pair AS likes_by_pair
-	JOIN comments_by_user_influencer_pair AS comments_by_pair ON
-		likes_by_pair.user_id = comments_by_pair.user_id AND
-		likes_by_pair.influencer = comments_by_pair.influencer
-	ORDER BY total_engagement DESC
+		user_id,
+		influencer_id,
+		COALESCE(total_likes, 0) AS total_likes,  -- coalesce turns NULLs into 0s
+		COALESCE(total_comments, 0) AS total_comments,
+		(COALESCE(total_likes, 0) + COALESCE(total_comments, 0)*1.5) AS engagement
+	FROM full_join
+	ORDER BY engagement DESC
 );
 
 -- The engagement of each user-noninfluencer pair
 CREATE VIEW engagement_by_user_non_influencer_pair AS (
-	WITH likes_by_user_non_influencer_pair AS (
+	WITH likes_by_user_non_influencer_pair AS (  -- find total likes from each user-to-influencer pair
 		SELECT
 			likes.user_id AS user_id,
-			photos.user_id AS non_influencer,
+			photos.user_id AS non_influencer_id,
 			COUNT(*) AS total_likes
 		FROM likes
-		JOIN photos ON likes.photo_id = photos.id
-		GROUP BY user_id, non_influencer
-		HAVING non_influencer NOT IN (SELECT id FROM influencers)
+		INNER JOIN photos ON likes.photo_id = photos.id
+		GROUP BY user_id, non_influencer_id
+		HAVING non_influencer_id NOT IN (SELECT id FROM influencers)
 	),
-	comments_by_user_non_influencer_pair AS (
+	comments_by_user_non_influencer_pair AS (  -- find total comments from each user-to-influencer pair
 		SELECT
 			comments.user_id AS user_id,
-			photos.user_id AS non_influencer,
+			photos.user_id AS non_influencer_id,
 			COUNT(*) AS total_comments
 		FROM comments
-		JOIN photos ON comments.photo_id = photos.id
-		GROUP BY user_id, non_influencer
-		HAVING non_influencer NOT IN (SELECT id FROM influencers)
+		INNER JOIN photos ON comments.photo_id = photos.id
+		GROUP BY user_id, non_influencer_id
+		HAVING non_influencer_id NOT IN (SELECT id FROM influencers)
+	),
+	full_join AS (  -- union a left join and right join to emulate a full join
+		SELECT
+			l.user_id AS user_id,
+			l.non_influencer_id AS non_influencer_id,
+			l.total_likes AS total_likes,
+			c.total_comments AS total_comments
+		FROM likes_by_user_non_influencer_pair AS l
+		LEFT JOIN comments_by_user_non_influencer_pair AS c ON -- left join from likes to comments
+			l.user_id = c.user_id AND
+			l.non_influencer_id = c.non_influencer_id
+		UNION  -- union removes duplicates
+		SELECT
+			c.user_id AS user_id,
+			c.non_influencer_id AS non_influencer_id,
+			l.total_likes AS total_likes,
+			c.total_comments AS total_comments
+		FROM likes_by_user_non_influencer_pair AS l
+		RIGHT JOIN comments_by_user_non_influencer_pair AS c ON  -- right join from likes to comments
+			l.user_id = c.user_id AND
+			l.non_influencer_id = c.non_influencer_id
 	)
 	SELECT
-		likes_by_pair.user_id,
-		likes_by_pair.non_influencer,
-		total_likes,
-		total_comments,
-		(total_likes + total_comments*1.5) AS total_engagement
-	FROM likes_by_user_non_influencer_pair AS likes_by_pair
-	JOIN comments_by_user_non_influencer_pair AS comments_by_pair ON
-		likes_by_pair.user_id = comments_by_pair.user_id AND
-		likes_by_pair.non_influencer = comments_by_pair.non_influencer
-	ORDER BY total_engagement DESC
+		user_id,
+		non_influencer_id,
+		COALESCE(total_likes, 0) AS total_likes,  -- coalesce turns NULLs into 0s
+		COALESCE(total_comments, 0) AS total_comments,
+		(COALESCE(total_likes, 0) + COALESCE(total_comments, 0)*1.5) AS engagement
+	FROM full_join
+	ORDER BY engagement DESC
 );
 
 -- Average engagement of users towards influencers and non-influencers
-SELECT AVG(total_engagement) FROM engagement_by_user_influencer_pair;
-SELECT AVG(total_engagement) FROM engagement_by_user_non_influencer_pair;
+SELECT AVG(engagement) FROM engagement_by_user_influencer_pair;
+SELECT AVG(engagement) FROM engagement_by_user_non_influencer_pair;
 
 -- Conduct t-test after
 
