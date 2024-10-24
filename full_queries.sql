@@ -47,11 +47,13 @@ GROUP BY hour
 ORDER BY hour;
 
 -- b) Which users are the most active? When are they most active?
--- Active users will be calculated as such:
+-- Activity metrics will be calculated as such:
 -- i ) activity = # of photos + # of likes + # of comments + # of followings
 -- ii) activity_rate = (# of photos + # of likes + # of comments + # of followings) / # of days since the user registered
 
-CREATE VIEW user_activity AS (
+-- Active and inactive users are measured (wrt to the specified metrics) to be the top and bottom 5% of users.
+
+CREATE VIEW user_activities AS (
 	WITH user_photos AS (
 		SELECT
 			users.id,
@@ -108,63 +110,51 @@ CREATE VIEW user_activity AS (
 );
 
 -- Active users (by activity) (excludes bots)
-DROP VIEW active_users;
-CREATE VIEW active_users AS (
+CREATE VIEW active_users_by_activity AS (
 	SELECT *
-    FROM user_activity
+    FROM user_activities
     WHERE
 		activity < 1000 AND  -- exclude bots
-		activity > 150  -- active users
+		activity >= 223  -- active users (~250 users)
+	ORDER BY activity DESC
 );
 
 -- Active users (by activity rate) (excludes suspected bots and new users)
-DROP VIEW active_users;
-CREATE VIEW active_users AS (
+CREATE VIEW active_users_by_activity_rate AS (
 	SELECT *
-    FROM user_activity
+    FROM user_activities
     WHERE
 		activity_rate >= 1 AND  -- active users
         activity < 1000 AND  -- exclude bots
         days_on_minigram > 10  -- exclude brand new users
+	ORDER BY activity_rate DESC
+);
+-- NOTE: Queries will be after inactive users definitions
+
+-- c) Which users are the most inactive? When are they most active?
+-- Inactive users (by activity) (excludes bots)
+CREATE VIEW inactive_users_by_activity AS (
+	SELECT *
+    FROM user_activities
+    WHERE activity <= 144
+    ORDER BY activity
 );
 
-WITH active_users_by_activity AS (
+-- Inactive users (by activity rate) (excludes suspected bots and new users)
+CREATE VIEW inactive_users_by_activity_rate AS (
 	SELECT *
-    FROM user_activity
-    WHERE
-		activity < 1000 AND  -- exclude bots
-		activity > 150  -- active users
-),
-active_users_by_activity_rate AS (
-	SELECT *
-    FROM user_activity
-    WHERE
-		activity_rate >= 1 AND  -- active users
-        activity < 1000 AND  -- exclude bots
-        days_on_minigram > 10  -- exclude brand new users
-)
-SELECT
-	DAYNAME(photos.created_at) AS day,
-    COUNT(active_users_by_activity.id) AS total_by_activity,
-    COUNT(active_users_by_activity_rate.id) AS total_by_activity_rate
-FROM users
-JOIN photos ON users.id = photos.user_id
-GROUP BY day
-ORDER BY total DESC;
+    FROM user_activities
+    WHERE activity_rate <= 0.045
+    ORDER BY activity_rate
+);
 
--- ChatGPT test
-SELECT
-    COALESCE(t1.day, t2.day) AS day,
-    COUNT(t1.id) AS count_t1,
-    COUNT(t2.id) AS count_t2
-FROM
-    (SELECT day, id FROM active_users_by_activity) t1
-FULL OUTER JOIN
-    (SELECT day, id FROM active_users_by_activity_rate) t2
-ON t1.day = t2.day
-GROUP BY COALESCE(t1.day, t2.day)
-ORDER BY day;
-
+-- Targetted users (a placeholder)
+-- How to use:
+-- SELECT * FROM [active_users_by_activity/active_users_by_activity_rate/inactive_users_by_activity/inactive_users_by_activity_rate]
+DROP VIEW target_users;
+CREATE VIEW target_users AS (
+	SELECT * FROM inactive_users_by_activity
+);
 
 -- Photos posted by active users by day
 SELECT
@@ -172,7 +162,7 @@ SELECT
     COUNT(*) AS total
 FROM users
 JOIN photos ON users.id = photos.user_id
-WHERE users.id IN (SELECT id FROM active_users)
+WHERE users.id IN (SELECT id FROM target_users)
 GROUP BY day
 ORDER BY total DESC;
 
@@ -182,7 +172,7 @@ SELECT
     COUNT(*) AS total
 FROM users
 JOIN likes ON users.id = likes.user_id
-WHERE users.id IN (SELECT id FROM active_users)
+WHERE users.id IN (SELECT id FROM target_users)
 GROUP BY day
 ORDER BY total DESC;
 
@@ -192,7 +182,7 @@ SELECT
     COUNT(*) AS total
 FROM users
 JOIN comments ON users.id = comments.user_id
-WHERE users.id IN (SELECT id FROM active_users)
+WHERE users.id IN (SELECT id FROM target_users)
 GROUP BY day
 ORDER BY total DESC;
 
@@ -202,64 +192,45 @@ SELECT
     COUNT(*) AS total
 FROM users
 JOIN follows ON users.id = follows.follower_id
-WHERE users.id IN (SELECT id FROM active_users)
+WHERE users.id IN (SELECT id FROM target_users)
 GROUP BY day
 ORDER BY total DESC;
 
--- c) Which users are the most inactive? When are they most active?
-DROP VIEW inactive_users;
-CREATE VIEW inactive_users AS (
-	SELECT *
-    FROM user_activity
-    WHERE activity <= 150 -- inactive users
-);
-
-DROP VIEW inactive_users;
-CREATE VIEW inactive_users AS (
-	SELECT *
-    FROM user_activity_rate
-    WHERE activity_rate <= 0.05 -- inactive users
-);
-
--- Photos posted by inactive users by day
-SELECT
-	DAYNAME(photos.created_at) AS day,
-    COUNT(*) AS total
-FROM users
-JOIN photos ON users.id = photos.user_id
-WHERE users.id IN (SELECT id FROM inactive_users)
-GROUP BY day
-ORDER BY total DESC;
-
--- Likes posted by inactive users by day
-SELECT
-	DAYNAME(likes.created_at) AS day,
-    COUNT(*) AS total
-FROM users
-JOIN likes ON users.id = likes.user_id
-WHERE users.id IN (SELECT id FROM inactive_users)
-GROUP BY day
-ORDER BY total DESC;
-
--- Comments posted by inactive users by day
-SELECT
-	DAYNAME(comments.created_at) AS day,
-    COUNT(*) AS total
-FROM users
-JOIN comments ON users.id = comments.user_id
-WHERE users.id IN (SELECT id FROM inactive_users)
-GROUP BY day
-ORDER BY total DESC;
-
--- Follows by inactive users by day
-SELECT
-	DAYNAME(follows.created_at) AS day,
-    COUNT(*) AS total
-FROM users
-JOIN follows ON users.id = follows.follower_id
-WHERE users.id IN (SELECT id FROM inactive_users)
-GROUP BY day
-ORDER BY total DESC;
+-- A different approach
+-- WITH active_users_by_activity AS (
+-- 	SELECT *
+--     FROM user_activity
+--     WHERE
+-- 		activity < 1000 AND  -- exclude bots
+-- 		activity > 150  -- active users
+-- ),
+-- active_users_by_activity_rate AS (
+-- 	SELECT *
+--     FROM user_activity
+--     WHERE
+-- 		activity_rate >= 1 AND  -- active users
+--         activity < 1000 AND  -- exclude bots
+--         days_on_minigram > 10  -- exclude brand new users
+-- ),
+-- when_photos_are_created AS (
+-- 	SELECT
+-- 		DAYNAME(photos.created_at) AS day
+-- 	FROM users
+-- 	JOIN photos ON users.id = photos.user_id
+-- 	GROUP BY day
+-- )
+-- -- ChatGPT test
+-- SELECT
+--     COALESCE(t1.day, t2.day) AS day,
+--     COUNT(t1.id) AS count_t1,
+--     COUNT(t2.id) AS count_t2
+-- FROM
+--     (SELECT day, id FROM active_users_by_activity) t1
+-- FULL OUTER JOIN
+--     (SELECT day, id FROM active_users_by_activity_rate) t2
+-- ON t1.day = t2.day
+-- GROUP BY COALESCE(t1.day, t2.day)
+-- ORDER BY day;
 
 -- Section 3: Posts and Content
 -- a) Which types of content typically receive the most engagement?
