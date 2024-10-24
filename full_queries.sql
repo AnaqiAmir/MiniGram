@@ -625,7 +625,7 @@ ORDER BY pct_liked_by_bots DESC;
 -- Section 6: Year by Year Analysis
 -- a) Compare the amount of posts/likes/comments from year to year
 
-CREATE VIEW yoy_analysis AS (
+CREATE VIEW yoy_analysis AS (  -- Table that shows the amount of photos/likes/comments from each year
 	WITH photos_by_year AS (
 		SELECT
 			YEAR(photos.created_at) AS year,
