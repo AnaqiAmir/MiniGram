@@ -7,6 +7,7 @@ This document details the queries that were used to answer the business question
     * [Question 1b: How many posts are there?](#question-1b)
     * [Question 1c: How many photos do each user post on average?](#question-1c)
     * [Question 1d: How many likes do each photo gets on average?](#question-1d)
+    * [Question 1e: How many comments do each photo gets on average?](#question-1e)
 2. [Section 2: User Engagement](#section-2-user-engagement)
     * [Question 2a: Is there a pattern for user registration periods?](#question-2a)
     * [Question 2b: Which users are the most active? When are they the most active?](#question-2b)

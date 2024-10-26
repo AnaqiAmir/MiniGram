@@ -15,6 +15,11 @@ SELECT (
 	(SELECT COUNT(*) FROM likes) / (SELECT COUNT(*) FROM photos)
 ) AS avg_likes_per_photo;
 
+-- e) What is the average number of comments under each post?
+SELECT (
+	(SELECT COUNT(*) FROM comments) / (SELECT COUNT(*) FROM photos)
+) AS avg_comments_per_photo;
+
 -- Section 2: User Engagement
 -- a) User registration by year/month/day/hour
 SELECT
