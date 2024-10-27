@@ -170,8 +170,281 @@ Key findings:
 ### Question 2b
 Which users are the most active? When are they the most active?
 
+To calculate which users are the most active, we will be using these activity metrics:
+* activity =  # of photos + # of likes + # of comments + # of followings
+* activity_rate = (# of photos + # of likes + # of comments + # of followings) / # of days since the user registered
+
+Then, active users will be defined as the top 5% of users with the highest metric scores.
+
+To make the process easier, these views will be created with the dataset:
+* `user_activities`: Table that stores the activity metrics of all users
+* `active_users_by_activity`: Table that stores the top 5% of users with the highest activity score
+* `active_users_by_activity_rate`: Table that stores the top 5% of users with the highest activity rate score
+* `target_users`: Table that acts as a placeholder for easier querying process
+
+These views will also be created to be used in Question 2c:
+* `inactive_users_by_activity`: Table that stores the bottom 5% of users with the highest activity score
+* `inactive_users_by_activity_rate`: Table that stores the bottom 5% of users with the highest activity rate score
+
+```sql
+-- User activities
+CREATE VIEW user_activities AS (
+	WITH user_photos AS (
+		SELECT
+			users.id,
+            users.username,
+			COUNT(photos.id) AS num_of_photos
+		FROM users
+		LEFT OUTER JOIN photos ON users.id = photos.user_id
+		GROUP BY users.id, username
+	),
+    user_likes AS (
+		SELECT
+			id,
+			username,
+			COUNT(likes.photo_id) AS num_of_likes
+		FROM users
+		LEFT OUTER JOIN likes ON users.id = likes.user_id
+		GROUP BY id, username
+	),
+    user_comments AS (
+		SELECT
+			users.id,
+			username,
+			COUNT(comments.id) AS num_of_comments
+		FROM users
+		LEFT OUTER JOIN comments ON users.id = comments.user_id
+		GROUP BY users.id, username
+	),
+    user_followings AS (
+		SELECT
+			users.id,
+			username,
+			COUNT(follows.followee_id) AS num_of_followings
+		FROM users
+		LEFT OUTER JOIN follows ON users.id = follows.follower_id
+		GROUP BY users.id, username
+	)
+    SELECT
+		users.id,
+		users.username,
+        num_of_photos,
+        num_of_likes,
+        num_of_comments,
+        num_of_followings,
+        (num_of_photos + num_of_likes + num_of_comments + num_of_followings) AS activity,
+        DATEDIFF("2025-01-01 00:00:00", users.created_at) AS days_on_minigram,
+		(num_of_photos + num_of_likes + num_of_comments + num_of_followings) / DATEDIFF("2025-01-01 00:00:00", users.created_at) AS activity_rate
+	FROM users
+	JOIN user_photos ON users.id = user_photos.id
+	JOIN user_likes ON users.id = user_likes.id
+	JOIN user_comments ON users.id = user_comments.id
+	JOIN user_followings ON users.id = user_followings.id
+	GROUP BY users.id, username
+	ORDER BY activity DESC
+);
+```
+
+![alt text](<Outputs/Question 2b-1 (User Activities) Output.png>)
+
+As seen above, the table displays each users number of photos, likes, comments, and followings as a way to measure activity on MiniGram. The total number of days that the user is on MiniGram is also displayed in the table which was used to calculate the user's activity rate.
+
+Also, note that even though the table is ordered by the activity metric in descending order, the table does not accurately reflect user activity due to the presence of suspected bots; a cleaner version of the table can be seen in the next query.
+
+```sql
+-- Active users (by activity) (excludes bots)
+CREATE VIEW active_users_by_activity AS (
+	SELECT *
+    FROM user_activities
+    WHERE
+		activity < 1000 AND  -- exclude bots
+		activity >= 223  -- active users (~250 users)
+	ORDER BY activity DESC
+);
+```
+
+![alt text](<Outputs/Question 2b-2 (Activity) Output.png>)
+
+The `active_users_by_activity` table seen above displays the top 5% of users who have the highest activity scores. These users are deemed "active users" by the activity metric.
+
+An important thing to note is that this table is filtered such that only users with activity scores greater or equal to 223 are chosen. This is because 223 is the score such that it accounts for around 250 users (i.e. 5% of users). This method of choosing the activity (and activity rate) scores as a threshold to filter users can be seen in the upcoming queries as well.
+
+The table also excluded users with an activity score that is greater than 1000 because after a deeper look into the data, those with that high of a score are most likely bots rather than real users. Therefore, this table purposely excludes them as to not skew the representation of active users.
+
+Though this is a decent way to find out which users are "active users", the main flaw with this metric is that it does not account for the amount of time a user has been on MiniGram. Therefore, it's biased towards users who have been on MiniGram for a longer time as they have had more time to post, like, comment, or follow other users to increase their activity score.
+
+To counter this flaw, the activity rate metric is calculated in the next query to get a better representation of "active users".
+
+```sql
+-- Active users (by activity rate) (excludes suspected bots and new users)
+CREATE VIEW active_users_by_activity_rate AS (
+	SELECT *
+    FROM user_activities
+    WHERE
+		activity_rate >= 0.85 AND  -- active users
+        activity < 1000 AND  -- exclude bots
+        days_on_minigram > 10  -- exclude brand new users
+	ORDER BY activity_rate DESC
+);
+```
+
+![alt text](<Outputs/Question 2b-3 (Activity Rate) Output.png>)
+
+The `active_users_by_activity_rate` table seen above gives the most "active users" by the activity rate metric. As we can see when compared to the `active_users_by_activity` table, this table gives a better representation of the data as it includes the temporal factor in user registrations.
+
+Similar to the previous table however, this table also excludes the suspected bots on MiniGram and the threshold score is chosen as specified previously. An additional factor that this table has is that it also exclude new users on MiniGram (specificaly users who have only been on MiniGram for 10 days or less) as a low number of days on MiniGram might give an unrepresentative high score in the user's activity rate. The threshold for days_on_minigram can be played with and the chosen value of 10 days was decided through heuristics.
+
+Now that we understand the structure of these tables, how "active users" are being defined, and which users are the most active based on the two metrics, we can find out when exactly these users are mostly active on MiniGram.
+
+As mentioned earlier, we will be using the `target_users` table to do these analysis as it offers better readability and querying abilities:
+```sql
+-- Targetted users (a placeholder)
+-- How to use:
+-- SELECT * FROM [active_users_by_activity/active_users_by_activity_rate/inactive_users_by_activity/inactive_users_by_activity_rate]
+DROP VIEW target_users;
+CREATE VIEW target_users AS (
+	SELECT * FROM active_users_by_activity  -- Please choose which view you would like to analyze and plug it here
+);
+```
+
+Then, before we can conduct the analysis, please note that I am only looking at the distribution of these features by days rather than any other time periods/ranges to offer the marketing team a better focused effort to attract the target users.
+```sql
+-- Photos posted by target users by day
+SELECT
+	DAYNAME(photos.created_at) AS day,
+    COUNT(*) AS total
+FROM users
+JOIN photos ON users.id = photos.user_id
+WHERE users.id IN (SELECT id FROM target_users)
+GROUP BY day
+ORDER BY total DESC;
+
+-- Likes posted by target users by day
+SELECT
+	DAYNAME(likes.created_at) AS day,
+    COUNT(*) AS total
+FROM users
+JOIN likes ON users.id = likes.user_id
+WHERE users.id IN (SELECT id FROM target_users)
+GROUP BY day
+ORDER BY total DESC;
+
+-- Comments posted by target users by day
+SELECT
+	DAYNAME(comments.created_at) AS day,
+    COUNT(*) AS total
+FROM users
+JOIN comments ON users.id = comments.user_id
+WHERE users.id IN (SELECT id FROM target_users)
+GROUP BY day
+ORDER BY total DESC;
+
+-- Follows by target users by day
+SELECT
+	DAYNAME(follows.created_at) AS day,
+    COUNT(*) AS total
+FROM users
+JOIN follows ON users.id = follows.follower_id
+WHERE users.id IN (SELECT id FROM target_users)
+GROUP BY day
+ORDER BY total DESC;
+```
+
+Here is the output of these queries in this order (top left: photos, top right: likes, bottoms left: comments, bottom right: follows]:
+
+| photos | likes |
+| ------ | ----- |
+| comments | follows |
+
+For activity:
+
+![alt text](<Outputs/Question 2b-4 (A_Photos) Output.png>)  ![alt text](<Outputs/Question 2b-5 (A_Likes) Output.png>)
+
+![alt text](<Outputs/Question 2b-6 (A_Comments) Output.png>)  ![alt text](<Outputs/Question 2b-7 (A_Follows) Output.png>)
+
+For activity rate:
+
+![alt text](<Outputs/Question 2b-8 (AR_Photos) Output.png>) ![alt text](<Outputs/Question 2b-9 (AR_Likes) Output.png>)
+
+![alt text](<Outputs/Question 2b-10 (AR_Comments) Output.png>) ![alt text](<Outputs/Question 2b-11 (AR_Follows) Output.png>)
+
+Key findings:
+* The user with the highest activity is smithlaura.
+* The user with the highest activity rate is laura73.
+* By activity:
+    * Active users post photos the most on Saturdays with a total of 231 photos and the least on Fridays with only 183 photos.
+    * Active users like photos the most on Wednesdays with a total of 4370 likes and the least on Sundays with only 4129 likes.
+    * Active users comment on photos the most on Wednesdays with a total of 3299 comments and the least on Saturdays with only 3157 comments.
+    * Active users follow other users the most on Sundays with a total of 989 follows and the least on Thursdays with only 903 follows.
+* By activity rate:
+    * Active users post photos the most on Mondays with a total of 220 photos and the least on Thursdays with only 146 photos.
+    * Active users like photos the most on Tuesdays with a total of 3194 likes and the least on Fridays with only 3033 likes.
+    * Active users comment on photos the most on Fridays with a total of 2649 comments and the least on Wednesdays with only 2512 comments.
+    * Active users follow other users the most on Thursdays with a total of 758 follows and the least on Sundays with only 686 follows.
+
 ### Question 2c
 Which users are the most inactive? When are these inactive users mostly active?
+
+While finding out which users are the most active and when they are active are important for optimal marketing, finding the converse types of users is just as important. By locating the inactive users and their activities, targetted marketing campaigns can be conducted in order to encourage these users to increase their activity on MiniGram and help boost the overall engagement with the product.
+
+The process of finding these users are exactly the same as was seen in Question 2b, and therefore, I will only show the code to define the "inactive users".
+```sql
+-- Inactive users (by activity) (excludes bots)
+CREATE VIEW inactive_users_by_activity AS (
+	SELECT *
+    FROM user_activities
+    WHERE activity <= 144
+    ORDER BY activity
+);
+```
+
+![alt text](<Outputs/Question 2c-1  (Activity) Output.png>)
+
+```sql
+-- Inactive users (by activity rate)
+CREATE VIEW inactive_users_by_activity_rate AS (
+	SELECT *
+    FROM user_activities
+    WHERE activity_rate <= 0.045
+    ORDER BY activity_rate
+);
+```
+
+![alt text](<Outputs/Question 2c-2  (Activity Rate) Output.png>)
+
+Note that there is no need to filter for bots in the case of inactive users because bots only affect the data with the high amount of likes that they produce. Therefore, when targetting users with a low number of likes, the bot factor is redundant.
+
+Here is the output of these queries in this order (top left: photos, top right: likes, bottoms left: comments, bottom right: follows]:
+
+| photos | likes |
+| ------ | ----- |
+| comments | follows |
+
+For activity:
+
+![alt text](<Outputs/Question 2c-3 (A_Photos) Output.png>) ![alt text](<Outputs/Question 2c-4 (A_Likes) Output.png>)
+
+![alt text](<Outputs/Question 2c-5 (A_Comments) Output.png>) ![alt text](<Outputs/Question 2c-6 (A_Follows) Output.png>)
+
+For activity rate:
+
+![alt text](<Outputs/Question 2c-7 (AR_Photos) Output.png>) ![alt text](<Outputs/Question 2c-8 (AR_Likes) Output.png>)
+
+![alt text](<Outputs/Question 2c-9 (AR_Comments) Output.png>) ![alt text](<Outputs/Question 2c-10 (AR_Follows) Output.png>)
+
+Key findings:
+* The user with the lowest activity is randy10.
+* The user with the lowest activity rate is ihaney.
+* By activity:
+    * Inactive users post photos the most on Fridays with a total of 172 photos and the least on Saturdays with only 137 photos.
+    * Inactive users like photos the most on Thursdays with a total of 2340 likes and the least on Wednesdays with only 2214 likes.
+    * Inactive users comment on photos the most on Fridays with a total of 2040 comments and the least on Sundays with only 1949 comments.
+    * Inactive users follow other users the most on Saturdays with a total of 553 follows and the least on Thursdays with only 501 follows.
+* By activity rate:
+    * Inactive users post photos the most on Thursdays with a total of 202 photos and the least on Fridays with only 161 photos.
+    * Inactive users like photos the most on Saturdays with a total of 2792 likes and the least on Thursdays with only 2679 likes.
+    * Inactive users comment on photos the most on Fridays with a total of 2421 comments and the least on Mondays with only 2302 comments.
+    * Inactive users follow other users the most on Tuesdays with a total of 695 follows and the least on Fridays with only 608 follows.
 
 ## Section 3: Posts and Content
 

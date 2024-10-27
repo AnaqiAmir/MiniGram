@@ -63,6 +63,7 @@ ORDER BY hour;
 
 -- Active and inactive users are measured (wrt to the specified metrics) to be the top and bottom 5% of users.
 
+-- User activities
 CREATE VIEW user_activities AS (
 	WITH user_photos AS (
 		SELECT
@@ -134,7 +135,7 @@ CREATE VIEW active_users_by_activity_rate AS (
 	SELECT *
     FROM user_activities
     WHERE
-		activity_rate >= 1 AND  -- active users
+		activity_rate >= 0.85 AND  -- active users
         activity < 1000 AND  -- exclude bots
         days_on_minigram > 10  -- exclude brand new users
 	ORDER BY activity_rate DESC
@@ -150,7 +151,7 @@ CREATE VIEW inactive_users_by_activity AS (
     ORDER BY activity
 );
 
--- Inactive users (by activity rate) (excludes suspected bots and new users)
+-- Inactive users (by activity rate)
 CREATE VIEW inactive_users_by_activity_rate AS (
 	SELECT *
     FROM user_activities
@@ -163,7 +164,7 @@ CREATE VIEW inactive_users_by_activity_rate AS (
 -- SELECT * FROM [active_users_by_activity/active_users_by_activity_rate/inactive_users_by_activity/inactive_users_by_activity_rate]
 DROP VIEW target_users;
 CREATE VIEW target_users AS (
-	SELECT * FROM inactive_users_by_activity
+	SELECT * FROM inactive_users_by_activity  -- Please choose which view you would like to analyze and plug it here
 );
 
 -- Photos posted by target users by day
