@@ -95,6 +95,78 @@ There are around 14 comments per photo.
 ### Question 2a
 Is there a pattern for user registration periods?
 
+To analyze, this we will take a look at the distribution of when users register for MiniGram based on different timings (year,month,day of week,hour).
+
+```sql
+-- User registrations by year
+SELECT
+	YEAR(created_at) AS year,
+    COUNT(*) AS total
+FROM users
+GROUP BY year
+ORDER BY year DESC;
+```
+
+![alt text](<Outputs/Question 2a-1 (Year) Output.png>)
+
+```sql
+-- User registrations by month
+SELECT
+	MONTHNAME(created_at) AS month,
+    COUNT(*) AS total
+FROM users
+GROUP BY month
+ORDER BY FIELD(MONTH,'January','February','March','April','May','June',
+					 'July','August','September','October','November','December');
+```
+
+![alt text](<Outputs/Question 2a-2 (Month) Output.png>)
+
+```sql
+-- User registrations by day of week
+SELECT
+	DAYNAME(created_at) AS day_of_week,
+    COUNT(*) AS total
+FROM users
+GROUP BY day_of_week
+ORDER BY FIELD(day_of_week, 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');
+```
+
+![alt text](<Outputs/Question 2a-3 (Day) Output.png>)
+
+```sql
+-- User registrations by hour
+SELECT
+	HOUR(created_at) AS hour,
+    COUNT(*) AS total
+FROM users
+GROUP BY hour
+ORDER BY hour;
+```
+
+![alt text](<Outputs/Question 2a-4 (Hour) Output.png>)
+
+Key findings:
+* Year:
+    * 2020 had the most user registrations with 460 registrations.
+    * 2015 had the lowest amount of user registration with only 416 registrations.
+    * There is an average of 454.54 user registrations per year since the inception of MiniGram.
+* Month:
+    * The month of August had the most user registrations with 451 registrations.
+    * The month of February had the lowest amount of user registration with only 359 registrations.
+    * There is an average of 416.67 user registrations per "type" of month.
+    * There is an average 37.88 user registrations per month since the inception of MiniGram.
+* Day of week:
+    * Saturdays had the most user registrations with 744 registrations.
+    * Wednesdays had the lowest amount of user registration with only 637 registrations.
+    * There is an average of 714.29 user registrations per day of week.
+    * There is an average of 1.24 user registrations per day since the inception of MiniGram.
+* Hour:
+    * The hour of 11am had the most user registrations with 243 registrations.
+    * The hour of 4pm had the lowest amount of user registration with only 179 registrations.
+    * There is an average of 208.33 user registrations per hour of day.
+    * There is an average of 0.05 user registrations per day since the inception of MiniGram.
+
 ### Question 2b
 Which users are the most active? When are they the most active?
 

@@ -21,7 +21,9 @@ SELECT (
 ) AS avg_comments_per_photo;
 
 -- Section 2: User Engagement
--- a) User registration by year/month/day/hour
+-- a) Is there a pattern for user registration periods?
+
+-- User registrations by year
 SELECT
 	YEAR(created_at) AS year,
     COUNT(*) AS total
@@ -29,6 +31,7 @@ FROM users
 GROUP BY year
 ORDER BY year DESC;
 
+-- User registrations by month
 SELECT
 	MONTHNAME(created_at) AS month,
     COUNT(*) AS total
@@ -37,6 +40,7 @@ GROUP BY month
 ORDER BY FIELD(MONTH,'January','February','March','April','May','June',
 					 'July','August','September','October','November','December');
 
+-- User registrations by day of week
 SELECT
 	DAYNAME(created_at) AS day_of_week,
     COUNT(*) AS total
@@ -44,6 +48,7 @@ FROM users
 GROUP BY day_of_week
 ORDER BY FIELD(day_of_week, 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');
 
+-- User registrations by hour
 SELECT
 	HOUR(created_at) AS hour,
     COUNT(*) AS total
