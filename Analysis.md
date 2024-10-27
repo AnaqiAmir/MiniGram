@@ -31,15 +31,64 @@ This document details the queries that were used to answer the business question
 
 ### Question 1a
 How many users are there?
+```sql
+-- a) How many users?
+SELECT COUNT(*) FROM users;
+```
+
+![alt text](<Outputs/Q1a Output.png>)
+
+There are 5000 users on MiniGram.
 
 ### Question 1b
 How many posts are there?
+```sql
+-- b) How many posts?
+SELECT COUNT(*) FROM photos;
+```
+
+![alt text](<Outputs/Q1b Output.png>)
+
+There are 25,000 total photos on MiniGram.
 
 ### Question 1c
 How many photos do each user post on average?
+```sql
+-- c) What is the average post per user?
+SELECT (
+	(SELECT COUNT(*) FROM photos) / (SELECT COUNT(*) FROM users)
+) AS avg_photo_per_user;
+
+```
+
+![alt text](<Outputs/Q1c Output.png>)
+
+There are around 5 photos per user (ie the average user has posted 5 photos).
 
 ### Question 1d
 How many likes do each photo gets on average?
+```sql
+-- d) What is the average amount of likes per post?
+SELECT (
+	(SELECT COUNT(*) FROM likes) / (SELECT COUNT(*) FROM photos)
+) AS avg_likes_per_photo;
+```
+
+![alt text](<Outputs/Q1d Output.png>)
+
+There are around 20 likes per photo.
+
+### Question 1e
+How many comments do each photo gets on average?
+```sql
+SELECT (
+	(SELECT COUNT(*) FROM comments) / (SELECT COUNT(*) FROM photos)
+) AS avg_comments_per_photo;
+```
+
+![alt text](<Outputs/Q1e Output.png>)
+
+There are around 14 comments per photo.
 
 ## Section 2: User Engagement
 
