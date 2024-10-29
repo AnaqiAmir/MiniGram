@@ -565,8 +565,88 @@ Note: These hours intuitively does not make sense because the data is synthetic 
 
 ## Section 4: Influencers
 
+Before we begin to answer the questions, we will first find the influencers in MiniGram. Define influencers as users that have more than 10% of MiniGram's users as their followers.
+
+Note: The definition of influencers can be changed if you wish to do so. A better definition of an influencer that can be used in the future is probably a combination of their follower-to-following ratios, the amount likes on their posts, and other factors as well.
+
+```sql
+-- Influencers are defined as users who have >10% of all users as their followers
+CREATE VIEW influencers AS (
+	SELECT
+		users.id,
+        users.username,
+        users.created_at,
+        COUNT(follows.followee_id) AS num_of_followers
+	FROM users
+	LEFT JOIN follows ON users.id = follows.followee_id
+	GROUP BY users.id
+	HAVING num_of_followers > (SELECT COUNT(*) FROM users)*0.1
+	ORDER BY num_of_followers DESC
+);
+```
+
+![alt text](<Outputs/Question 4-1 (Influencers) Output.png>)
+
+```sql
+SELECT COUNT(*) AS num_of_influencers
+FROM (SELECT * FROM minigram_db.influencers) AS influencer_count;
+```
+
+![alt text](<Outputs/Question 4-2 (Count) Output.png>)
+
+Based on our definition of influencers, we can see that there exists 135 influencers on MiniGram. We will use this view of influencers in the analysis throughout Question 4.
+
 ### Question 4a
 Find the difference between the types of posts that influencers post compared to non-influencers.
+
+To understand the difference between the types of posts between these two groups, lets take a look at the content (tags) of their respective photos.
+
+```sql
+-- Types of content for influencers
+WITH influencer_photos AS (
+	SELECT *
+    FROM photos
+    WHERE photos.user_id IN (SELECT id FROM influencers)
+)
+SELECT
+	tags.tag_name,
+    COUNT(*) AS total
+FROM influencer_photos
+JOIN photo_tags ON influencer_photos.id = photo_tags.photo_id
+JOIN tags ON photo_tags.tag_id = tags.id
+GROUP BY tag_name
+ORDER BY total DESC;
+```
+
+![alt text](<Outputs/Question 4a-1 (Influencers) Output.png>)
+
+```sql
+-- Types of content for non-influencers
+WITH non_influencer_photos AS (
+	SELECT *
+    FROM photos
+    WHERE photos.user_id NOT IN (SELECT id FROM influencers)
+)
+SELECT
+	tags.tag_name,
+    COUNT(*) AS total
+FROM non_influencer_photos
+JOIN photo_tags ON non_influencer_photos.id = photo_tags.photo_id
+JOIN tags ON photo_tags.tag_id = tags.id
+GROUP BY tag_name
+ORDER BY total DESC;
+```
+
+![alt text](<Outputs/Question 4a-2 (Non influencers) Output.png>)
+
+Key findings:
+* Influencers:
+    * The tags bestoftheday, blackandwhite, comedy, quoteoftheday, cute are the top 5 tags that are used in content posted by influencers.
+    * The most used tag by influencers is bestoftheday with 33 instances.
+* Non-influencers:
+    * The tags blackandwhite, photography, comedy, motivation, bestoftheday are the top 5 tags that are used in content posted by non-influencers.
+    * The most used tag by non-influencers is blackandwhite with 751 instances.
+* The tags bestoftheday, blackandwhite, and comedy are used substantially by both influencers and non-influencers alike.
 
 ### Question 4b
 Find the difference in activity between influencers and non-influencers.
