@@ -983,8 +983,75 @@ Key findings:
 ### Question 5b
 How much do bots impact the posts that they engage with?
 
+To answer this question, I will create a view that shows the distribution between user likes and bot likes that are present in each photo.
+
+```sql
+-- Create view with photo.id, bot_likes, user_likes, total_likes
+CREATE VIEW user_bot_likes AS (
+	WITH likes_by_bots AS (
+		SELECT
+			photo_id,
+			COUNT(*) AS bot_likes
+		FROM likes
+		WHERE user_id IN (SELECT id FROM suspected_bots)
+		GROUP BY photo_id
+	),
+	likes_by_users AS (
+		SELECT
+			photo_id,
+			COUNT(*) AS user_likes
+		FROM likes
+		WHERE user_id NOT IN (SELECT id FROM suspected_bots)
+		GROUP BY photo_id
+	),
+	full_join AS (  -- union left join and right join to emulate full join
+		SELECT
+			b.photo_id AS photo_id,
+			b.bot_likes AS bot_likes,
+			u.user_likes AS user_likes
+		FROM likes_by_bots AS b
+		LEFT JOIN likes_by_users AS u ON
+			b.photo_id = u.photo_id
+		UNION
+		SELECT
+			u.photo_id AS photo_id,
+			b.bot_likes AS bot_likes,
+			u.user_likes AS user_likes
+		FROM likes_by_bots AS b
+		RIGHT JOIN likes_by_users AS u ON
+			b.photo_id = u.photo_id
+	)
+	SELECT
+		full_join.photo_id,
+		COALESCE(full_join.bot_likes,0) AS bot_likes,  -- coalesce function turns NULLs into 0s
+		COALESCE(full_join.user_likes,0) AS user_likes,
+		COALESCE(full_join.bot_likes,0) + COALESCE(full_join.user_likes,0) AS total_likes,
+		COALESCE(full_join.bot_likes,0) / (COALESCE(full_join.bot_likes,0) + COALESCE(full_join.user_likes,0)) AS pct_of_bot_likes,
+		COALESCE(full_join.user_likes,0) / (COALESCE(full_join.bot_likes,0) + COALESCE(full_join.user_likes,0)) AS pct_of_user_likes
+	FROM full_join
+);
+```
+
+![alt text](<Outputs/Question 5b-1 Output.png>)
+
+```sql
+-- Average likes and percentage of likes by bots and likes by users on photos
+SELECT
+	AVG(bot_likes) AS avg_bot_likes,
+    AVG(user_likes) AS avg_user_likes,
+	AVG(pct_of_bot_likes) AS avg_pct_of_bot_likes,
+    AVG(pct_of_user_likes) AS avg_pct_of_user_likes
+FROM user_bot_likes;
+```
+
+![alt text](<Outputs/Question 5b-2 Output.png>)
+
+As we can see, the average amount of likes on photos that are done by bots is around 23% which is quite a high number. In the next question, we will try to see there is any users on MiniGram that actually uses bots to boost the engagment on their posts.
+
 ### Question 5c
 Find which accounts (if any) implement the use of bots on their posts.
+
+
 
 ## Section 6: Year by Year Analysis
 
