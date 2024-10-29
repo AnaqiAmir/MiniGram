@@ -1078,8 +1078,102 @@ Key findings:
 
 ## Section 6: Year by Year Analysis
 
+A year-over-year analysis of different metrics is crucial to understand how a product or a business is growing since its inception. By understanding the growth rate of MiniGram, optimal strategies can be implemented to further grow its user base and engagement.
+
 ### Question 6a
 Compare the amount of photos/likes/comments from year to year
 
+To compare, a view will be created that displays total photos, likes, and comments that are being done from year to year.
+
+```sql
+CREATE VIEW yoy_analysis AS (  -- Table that shows the amount of photos/likes/comments from each year
+	WITH photos_by_year AS (
+		SELECT
+			YEAR(photos.created_at) AS year,
+			COUNT(*) AS total_photos
+		FROM photos
+		GROUP BY year
+		ORDER BY year
+	),
+	likes_by_year AS (
+		SELECT
+			YEAR(likes.created_at) AS year,
+			COUNT(*) AS total_likes
+		FROM likes
+		GROUP BY year
+		ORDER BY year
+	),
+	comments_by_year AS (
+		SELECT
+			YEAR(comments.created_at) AS year,
+			COUNT(*) AS total_comments
+		FROM comments
+		GROUP BY year
+		ORDER BY year
+	)
+	SELECT
+		photos_by_year.year AS year,
+		total_photos,
+		total_likes,
+		total_comments,
+		total_photos + total_likes + total_comments AS total
+	FROM photos_by_year
+	JOIN likes_by_year ON photos_by_year.year = likes_by_year.year
+	JOIN comments_by_year ON photos_by_year.year = comments_by_year.year
+	ORDER BY year
+);
+```
+
+![alt text](<Outputs/Question 6a Output.png>)
+
+Key findings:
+* There is a steady growth in the total amount across all pillars from year to year.
+
 ### Question 6b
 Is there an increase in the rate of user and content growth from year to year?
+
+Let's see if the rate of growth in these pillars are consistent from year to year.
+
+```sql
+-- Growth rate of photos, likes, and comments
+SELECT
+	year,
+    total_photos,
+    (total_photos - LAG(total_photos) OVER()) / LAG(total_photos) OVER() AS photos_pct_diff,
+    total_likes,
+    (total_likes - LAG(total_likes) OVER()) / LAG(total_likes) OVER() AS likes_pct_diff,
+    total_comments,
+    (total_comments - LAG(total_comments) OVER()) / LAG(total_comments) OVER() AS comments_pct_diff,
+    total,
+    (total - LAG(total) OVER()) / LAG(total) OVER() AS pct_diff
+FROM yoy_analysis;
+```
+
+![alt text](<Outputs/Question 6b-1 Output.png>)
+
+```sql
+-- Growth rate of users
+WITH users_by_year AS(
+	SELECT
+		YEAR(users.created_at) AS year,
+		COUNT(*) AS total_users
+	FROM users
+	GROUP BY year
+)
+SELECT
+	year,
+    total_users,
+    (total_users - LAG(total_users) OVER() ) / LAG(total_users) OVER() AS users_pct_diff
+FROM users_by_year
+ORDER BY year;
+```
+
+![alt text](<Outputs/Question 6b-2 (Users) Output.png>)
+
+Key findings:
+* 2015 had the highest growth rates across all pillars, implying that user adoption within the first year was successful.
+* Every year after 2015 have not seen the same success.
+* There is a slight surge in growth in all pillars aside from users in 2024.
+* User growth rate has been consistent throughout the years, hovering between +/- 10% from year to year, with around 400 new users every year.
+
+## Conclusion

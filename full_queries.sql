@@ -705,14 +705,30 @@ SELECT * FROM yoy_analysis;
 -- b) Is there an increase in the rate of user and content growth from year to year?
 -- Find the percentage increase from previous year
 
+-- Growth rate of photos, likes, and comments
 SELECT
 	year,
     total_photos,
-    (LEAD(total_photos) OVER() - total_photos) / total_photos AS photos_pct_diff,
+    (total_photos - LAG(total_photos) OVER()) / LAG(total_photos) OVER() AS photos_pct_diff,
     total_likes,
-    (LEAD(total_likes) OVER() - total_likes) / total_likes AS likes_pct_diff,
+    (total_likes - LAG(total_likes) OVER()) / LAG(total_likes) OVER() AS likes_pct_diff,
     total_comments,
-    (LEAD(total_comments) OVER() - total_comments) / total_comments AS comments_pct_diff,
+    (total_comments - LAG(total_comments) OVER()) / LAG(total_comments) OVER() AS comments_pct_diff,
     total,
-	(LEAD(total) OVER() - total) / total AS pct_diff
+    (total - LAG(total) OVER()) / LAG(total) OVER() AS pct_diff
 FROM yoy_analysis;
+
+-- Growth rate of users
+WITH users_by_year AS(
+	SELECT
+		YEAR(users.created_at) AS year,
+		COUNT(*) AS total_users
+	FROM users
+	GROUP BY year
+)
+SELECT
+	year,
+    total_users,
+    (total_users - LAG(total_users) OVER() ) / LAG(total_users) OVER() AS users_pct_diff
+FROM users_by_year
+ORDER BY year;
