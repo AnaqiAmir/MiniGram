@@ -26,6 +26,7 @@ This document details the queries that were used to answer the business question
 6. [Section 6: Year by Year Analysis](#section-6-year-by-year-analysis)
     * [Question 6a: Compare the amount of photos/likes/comments from year to year](#question-6a)
     * [Question 6b: Is there an increase in the rate of user and content growth from year to year?](#question-6b)
+7. [Conclusion](#conclusion)
 
 ## Section 1: Basic Analytics
 
@@ -148,13 +149,13 @@ ORDER BY hour;
 
 Key findings:
 * Year:
-    * 2020 had the most user registrations with 460 registrations.
+    * 2020 had the most user registrations with 491 registrations.
     * 2015 had the lowest amount of user registration with only 416 registrations.
     * There is an average of 454.54 user registrations per year since the inception of MiniGram.
 * Month:
     * The month of August had the most user registrations with 451 registrations.
     * The month of February had the lowest amount of user registration with only 359 registrations.
-    * There is an average of 416.67 user registrations per "type" of month.
+    * There is an average of 416.67 user registrations per month of year.
     * There is an average 37.88 user registrations per month since the inception of MiniGram.
 * Day of week:
     * Saturdays had the most user registrations with 744 registrations.
@@ -165,7 +166,7 @@ Key findings:
     * The hour of 11am had the most user registrations with 243 registrations.
     * The hour of 4pm had the lowest amount of user registration with only 179 registrations.
     * There is an average of 208.33 user registrations per hour of day.
-    * There is an average of 0.05 user registrations per day since the inception of MiniGram.
+    * There is an average of 0.05 user registrations per hour since the inception of MiniGram.
 
 ### Question 2b
 Which users are the most active? When are they the most active?
@@ -350,7 +351,7 @@ GROUP BY day
 ORDER BY total DESC;
 ```
 
-Here is the output of these queries in this order (top left: photos, top right: likes, bottoms left: comments, bottom right: follows]:
+Here is the output of these queries in this order (top left: photos, top right: likes, bottoms left: comments, bottom right: follows):
 
 | photos | likes |
 | ------ | ----- |
