@@ -884,8 +884,101 @@ Let the null hypothesis be H0: The averages are the same. Let the notation indic
 
 ## Section 5: Bots
 
+Bots are a natural part of social media and it is important to analyze how much engagement they do with real users. Define suspected bots on MiniGram to be users who have liked more than 5% of total photos.
+
+```sql
+-- Bots are defined as users who like >5% of all photos
+CREATE VIEW suspected_bots AS (
+	SELECT
+		users.id,
+        users.username
+	FROM users
+	JOIN likes ON users.id = likes.user_id
+	GROUP BY likes.user_id
+	HAVING COUNT(*) >= (SELECT COUNT(*) FROM photos) * 0.05
+);
+```
+
+![alt text](<Outputs/Question 5-1 Output.png>)
+
+![alt text](<Outputs/Question 5-2 Output.png>)
+
+There are 49 suspected bots on MiniGram.
+
 ### Question 5a
 When are bots most active?
+
+Now that we have a list of bots, we can analyze when they are most active.
+
+```sql
+-- Bot likes by year
+SELECT
+	YEAR(likes.created_at) AS year,
+    COUNT(*) AS total
+FROM likes
+WHERE user_id IN (SELECT id FROM suspected_bots)
+GROUP BY year
+ORDER BY total DESC;
+```
+
+![alt text](<Outputs/Question 5a-1 (Year) Output.png>)
+
+```sql
+-- Bot likes by month
+SELECT
+	MONTHNAME(likes.created_at) AS month,
+    COUNT(*) AS total
+FROM likes
+WHERE user_id IN (SELECT id FROM suspected_bots)
+GROUP BY month
+ORDER BY total DESC;
+```
+
+![alt text](<Outputs/Question 5a-2 (Month) Output.png>)
+
+```sql
+-- Bot likes by day of week
+SELECT
+	DAYNAME(likes.created_at) AS day,
+    COUNT(*) AS total
+FROM likes
+WHERE user_id IN (SELECT id FROM suspected_bots)
+GROUP BY day
+ORDER BY total DESC;
+```
+
+![alt text](<Outputs/Question 5a-3 (Day) Output.png>)
+
+```sql
+-- Bot likes by hour
+SELECT
+	HOUR(likes.created_at) AS hour,
+    COUNT(*) AS total
+FROM likes
+WHERE user_id IN (SELECT id FROM suspected_bots)
+GROUP BY hour
+ORDER BY total DESC;
+```
+
+![alt text](<Outputs/Question 5a-4 (Hour) Output.png>)
+
+Key findings:
+* Year:
+    * The year with the highest amount of bot activity is 2024 with 21563 bot likes.
+    * The year with the lowest amount of bot activity is 2014 with only 682 bot likes.
+    * The amount of bot activity increases as the year increases, most likely due to more bot accounts being created as the years go by.
+* Month:
+    * The month with the highest amount of bot activity is December with 7696 bot likes.
+    * The month with the lowest amount of bot activity is February with only 5223 bot likes.
+    * There seems to be a trend where bot activity increases in the second half of the year compared to the first half. The last 6 months of the year has the 6 highest total of bot likes.
+* Day of week:
+    * The day of week with the highest amount of bot activity is Thursdays with 11351 bot likes.
+    * The day of week with the lowest amount of bot activity is Wednesdays with only 10964 bot likes.
+    * No pattern can be located in the day of week time format.
+* Hour:
+    * The hour with the highest amount of bot activity is 8pm with 3363 bot likes.
+    * The hour with the lowest amount of bot activity is 4am with only 3149 bot likes.
+    * No pattern can be located in the hour time format.
 
 ### Question 5b
 How much do bots impact the posts that they engage with?

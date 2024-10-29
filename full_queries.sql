@@ -552,6 +552,8 @@ CREATE VIEW suspected_bots AS (
 );
 
 -- a) When are the bots most active?
+
+-- Bot likes by year
 SELECT
 	YEAR(likes.created_at) AS year,
     COUNT(*) AS total
@@ -560,6 +562,7 @@ WHERE user_id IN (SELECT id FROM suspected_bots)
 GROUP BY year
 ORDER BY total DESC;
 
+-- Bot likes by month
 SELECT
 	MONTHNAME(likes.created_at) AS month,
     COUNT(*) AS total
@@ -568,6 +571,7 @@ WHERE user_id IN (SELECT id FROM suspected_bots)
 GROUP BY month
 ORDER BY total DESC;
 
+-- Bot likes by day of week
 SELECT
 	DAYNAME(likes.created_at) AS day,
     COUNT(*) AS total
@@ -576,6 +580,7 @@ WHERE user_id IN (SELECT id FROM suspected_bots)
 GROUP BY day
 ORDER BY total DESC;
 
+-- Bot likes by hour
 SELECT
 	HOUR(likes.created_at) AS hour,
     COUNT(*) AS total
