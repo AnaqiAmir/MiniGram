@@ -164,7 +164,7 @@ CREATE VIEW inactive_users_by_activity_rate AS (
 -- SELECT * FROM [active_users_by_activity/active_users_by_activity_rate/inactive_users_by_activity/inactive_users_by_activity_rate]
 DROP VIEW target_users;
 CREATE VIEW target_users AS (
-	SELECT * FROM inactive_users_by_activity  -- Please choose which view you would like to analyze and plug it here
+	SELECT * FROM inactive_users_by_activity_rate  -- Please choose which view you would like to analyze and plug it here
 );
 
 -- Photos posted by target users by day
@@ -372,11 +372,22 @@ WITH influencer_activity AS (
 SELECT AVG(activity) AS avg_influencer_activity
 FROM influencer_activity;
 
--- Average activity of non-influencers
+-- Average activity of non-influencers (with suspected bots)
 WITH non_influencer_activity AS (
 	SELECT *
     FROM user_activities
-    WHERE id NOT IN (SELECT id FROM influencers) -- AND activity<1000  <---- if you want to exclude bots
+    WHERE id NOT IN (SELECT id FROM influencers)
+)
+SELECT AVG(activity) AS avg_non_influencer_activity
+FROM non_influencer_activity;
+
+-- Average activity of non-influencers (without suspected bots)
+WITH non_influencer_activity AS (
+	SELECT *
+    FROM user_activities
+    WHERE
+		id NOT IN (SELECT id FROM influencers) AND
+        activity<1000
 )
 SELECT AVG(activity) AS avg_non_influencer_activity
 FROM non_influencer_activity;
@@ -391,11 +402,22 @@ WITH influencer_activity_rate AS (
 SELECT AVG(activity_rate) AS avg_influencer_activity_rate
 FROM influencer_activity_rate;
 
--- Average activity rate of non-influencers
+-- Average activity rate of non-influencers (with suspected bots)
 WITH non_influencer_activity_rate AS (
 	SELECT *
 	FROM user_activities
-	WHERE id NOT IN (SELECT id FROM influencers)  -- AND activity<1000  <---- if you want to exclude bots
+	WHERE id NOT IN (SELECT id FROM influencers)
+)
+SELECT AVG(activity_rate) AS avg_non_influencer_activity_rate
+FROM non_influencer_activity_rate;
+
+-- Average activity rate of non-influencers (without suspected bots)
+WITH non_influencer_activity_rate AS (
+	SELECT *
+	FROM user_activities
+	WHERE
+		id NOT IN (SELECT id FROM influencers) AND
+        activity<1000
 )
 SELECT AVG(activity_rate) AS avg_non_influencer_activity_rate
 FROM non_influencer_activity_rate;

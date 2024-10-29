@@ -651,6 +651,104 @@ Key findings:
 ### Question 4b
 Find the difference in activity between influencers and non-influencers.
 
+The difference in activity will be analyzed by looking at the groups' averages.
+
+For activity:
+
+```sql
+-- Average activity of influencers
+WITH influencer_activity AS (
+	SELECT *
+	FROM user_activities
+	WHERE id IN (SELECT id FROM influencers)
+)
+SELECT AVG(activity) AS avg_influencer_activity
+FROM influencer_activity;
+```
+
+![alt text](<Outputs/Question 4b-1 (Influencers A) Output.png>)
+
+```sql
+-- Average activity of non-influencers (with suspected bots)
+WITH non_influencer_activity AS (
+	SELECT *
+    FROM user_activities
+    WHERE id NOT IN (SELECT id FROM influencers)
+)
+SELECT AVG(activity) AS avg_non_influencer_activity
+FROM non_influencer_activity;
+```
+
+![alt text](<Outputs/Question 4b-2 (Non-Influencers w Bots A) Output.png>)
+
+```sql
+-- Average activity of non-influencers (without suspected bots)
+WITH non_influencer_activity AS (
+	SELECT *
+    FROM user_activities
+    WHERE
+		id NOT IN (SELECT id FROM influencers) AND
+        activity<1000
+)
+SELECT AVG(activity) AS avg_non_influencer_activity
+FROM non_influencer_activity;
+```
+
+![alt text](<Outputs/Question 4b-3 (Non Influencers w:o Bots A) Output.png>)
+
+For activity rate:
+
+```sql
+-- Average activity rate of influencers
+WITH influencer_activity_rate AS (
+	SELECT *
+	FROM user_activities
+	WHERE id IN (SELECT id FROM influencers)
+)
+SELECT AVG(activity_rate) AS avg_influencer_activity_rate
+FROM influencer_activity_rate;
+```
+
+![alt text](<Outputs/Question 4b-4 (Influencers AR) Output.png>)
+
+```sql
+-- Average activity rate of non-influencers (with suspected bots)
+WITH non_influencer_activity_rate AS (
+	SELECT *
+	FROM user_activities
+	WHERE id NOT IN (SELECT id FROM influencers)
+)
+SELECT AVG(activity_rate) AS avg_non_influencer_activity_rate
+FROM non_influencer_activity_rate;
+```
+
+![alt text](<Outputs/Question 4b-5 (Non-Influencers w Bots AR) Output.png>)
+
+```sql
+-- Average activity rate of non-influencers (without suspected bots)
+WITH non_influencer_activity_rate AS (
+	SELECT *
+	FROM user_activities
+	WHERE
+		id NOT IN (SELECT id FROM influencers) AND
+        activity<1000
+)
+SELECT AVG(activity_rate) AS avg_non_influencer_activity_rate
+FROM non_influencer_activity_rate;
+```
+
+![alt text](<Outputs/Question 4b-6 (Non-Influencers w:o Bots AR) Output.png>)
+
+Key findings:
+
+|  | Activity | Activity Rate |
+|---|---|---|
+|Influencers|179.62|0.46998||
+|Non Influencers with Bots|196.15|0.47888|
+|Non Influencers without Bots|180.92|0.45621|
+
+Therefore, there is not a significant difference in both activity and activity rate between influencers and non-influencers (with and without suspected bots).
+
 ### Question 4c
 How do influencers impact other users' engagement on MiniGram?
 
