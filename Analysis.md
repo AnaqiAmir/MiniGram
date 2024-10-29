@@ -95,7 +95,7 @@ There are around 14 comments per photo.
 ### Question 2a
 Is there a pattern for user registration periods?
 
-To analyze, this we will take a look at the distribution of when users register for MiniGram based on different timings (year,month,day of week,hour).
+To analyze this, we will take a look at the distribution of when users register for MiniGram based on different timings (year,month,day of week,hour).
 
 ```sql
 -- User registrations by year
@@ -450,6 +450,92 @@ Key findings:
 
 ### Question 3a
 What types of content typically gets the most engagement?
+
+While we can find the count of how many times each tag is used on MiniGram, it is not relevant to the question at hand (or at least not very insightful). Instead, we will find the photos with the most engagement, and look at the tags that are associated with those specfic photos to better understand what types of content posted leads to a high engagement for the photo.
+
+Define engagement as:
+
+* engagement = # of likes + (# of comments)*1.5
+
+where comments are worth more than likes.
+
+Create a view that tallies up each photo's engagement.
+
+```sql
+-- Table that displays total engagement of photos
+CREATE VIEW photo_engagements AS (
+	WITH photo_likes AS (
+		SELECT
+			photos.id,
+			COUNT(likes.photo_id) AS total_likes
+		FROM photos
+		LEFT JOIN likes ON photos.id = likes.photo_id
+		GROUP BY photos.id
+	),
+	photo_comments AS (
+		SELECT
+			photos.id,
+			COUNT(comments.photo_id) AS total_comments
+		FROM photos
+		LEFT JOIN comments ON photos.id = comments.photo_id
+		GROUP BY photos.id
+	)
+	SELECT
+		photo_likes.id AS photo_id,
+		total_likes,
+		total_comments,
+		(total_likes + (1.5*total_comments)) AS engagement
+	FROM photo_likes
+	JOIN photo_comments ON photo_likes.id = photo_comments.id
+	ORDER BY engagement DESC
+);
+
+SELECT * FROM photo_engagements;
+```
+
+![alt text](<Outputs/Question 3a-1 (Photo Engagements) Output.png>)
+
+The view displays each photo's total likes, total comments, and the corresponding engagement associated with those metrics. Next, we will filter the photos in `photo_engagement` by finding the top 5% of photos and take a look at the tags that are associated with those highly engaged photos.
+
+```sql
+-- Query which tags are associated with the most engaged photos
+WITH photos_with_most_engagements AS (  -- Filter to find photos with most engagements
+	SELECT *
+    FROM photo_engagements
+    WHERE engagement >= 500 -- Around top 5% of photos
+),
+photo_to_tag_name AS (  -- Associating photos to their tags
+	SELECT
+		photo_tags.photo_id,
+        tags.tag_name
+	FROM photo_tags
+    JOIN tags ON photo_tags.tag_id = tags.id
+    HAVING photo_id IN (SELECT photo_id FROM photos_with_most_engagements)  -- Only look at photos with high engagement
+)
+SELECT
+	tag_name,
+    COUNT(*) AS total
+FROM photo_to_tag_name
+GROUP BY tag_name
+ORDER BY total DESC;
+```
+
+![alt text](<Outputs/Question 3a-2 (Photo w Most Engagement) Output.png>)
+
+Key findings:
+* The top 3 tags associated with highly engaged photos are:
+    * bestoftheday (14)
+    * cute (10)
+    * celebration (10)
+    * This suggests that photos with positive tags are highly engaged with:
+* 3 out of the top 8 tags are related to photography:
+    * blackandwhite (9)
+    * camera (8)
+    * digitalmarketing (8)
+* 3 out the top 12 are related to sports and movement with:
+    * gym (8)
+    * cardio (7)
+    * biker (7)
 
 ### Question 3b
 When is the ideal time for a user to post content for a better chance to get high amount of engagement?
