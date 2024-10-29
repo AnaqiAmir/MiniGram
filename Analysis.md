@@ -540,6 +540,29 @@ Key findings:
 ### Question 3b
 When is the ideal time for a user to post content for a better chance to get high amount of engagement?
 
+Find at which hour of the day the top 5% of photos with the most engagement are posted.
+
+```sql
+WITH photo_with_most_engagements AS (  -- Filter to find photos with most engagements
+	SELECT *
+    FROM photo_engagements
+    WHERE engagement >= 500
+)
+SELECT
+	HOUR(photos.created_at) AS hour,
+    COUNT(*) AS total
+FROM photos
+WHERE id IN (SELECT photo_id FROM photo_with_most_engagements)
+GROUP BY hour
+ORDER BY total DESC;
+```
+
+![alt text](<Outputs/Question 3b Output.png>)
+
+As we can see, the best time to post a photo to get a high engagement is at 2am; while the worst time is at 12pm and 9pm.
+
+Note: These hours intuitively does not make sense because the data is synthetic so it unfortunately does not reflect real world activities in this case.
+
 ## Section 4: Influencers
 
 ### Question 4a
