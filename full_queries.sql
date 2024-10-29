@@ -480,7 +480,7 @@ CREATE VIEW engagement_by_user_influencer_pair AS (
 
 -- The engagement of each user-noninfluencer pair
 CREATE VIEW engagement_by_user_non_influencer_pair AS (
-	WITH likes_by_user_non_influencer_pair AS (  -- find total likes from each user-to-influencer pair
+	WITH likes_by_user_non_influencer_pair AS (  -- find total likes from each user-to-noninfluencer pair
 		SELECT
 			likes.user_id AS user_id,
 			photos.user_id AS non_influencer_id,
@@ -490,7 +490,7 @@ CREATE VIEW engagement_by_user_non_influencer_pair AS (
 		GROUP BY user_id, non_influencer_id
 		HAVING non_influencer_id NOT IN (SELECT id FROM influencers)
 	),
-	comments_by_user_non_influencer_pair AS (  -- find total comments from each user-to-influencer pair
+	comments_by_user_non_influencer_pair AS (  -- find total comments from each user-to-noninfluencer pair
 		SELECT
 			comments.user_id AS user_id,
 			photos.user_id AS non_influencer_id,
@@ -532,8 +532,8 @@ CREATE VIEW engagement_by_user_non_influencer_pair AS (
 );
 
 -- Average engagement of users towards influencers and non-influencers
-SELECT AVG(engagement) FROM engagement_by_user_influencer_pair;
-SELECT AVG(engagement) FROM engagement_by_user_non_influencer_pair;
+SELECT AVG(engagement) AS avg_user_influencer_pair FROM engagement_by_user_influencer_pair;
+SELECT AVG(engagement) AS avg_user_non_influencer_pair FROM engagement_by_user_non_influencer_pair;
 
 -- Conduct t-test after
 
