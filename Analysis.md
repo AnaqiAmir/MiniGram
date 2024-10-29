@@ -881,6 +881,25 @@ SELECT AVG(engagement) AS avg_user_non_influencer_pair FROM engagement_by_user_n
 Now that we have the average engagement from the two groups, we can conduct a t-test to see if there is a significant difference.
 
 Let the null hypothesis be H0: The averages are the same. Let the notation indicate that Group 1 is the user_influencer pairs while Group 2 is the user_non_influencer pairs. We know that:
+* n_1 = 59004
+* n_2 = 558707
+* avg_1 = 5.36601
+* avg_2 = 1.27600
+* var_1 = 17.7833
+* var_2 = 0.170505
+
+Therefore, the T-value is:
+
+![alt text](<Outputs/Question 4c-5 (T-value) Output.png>)
+
+Then, the degrees of freedom is:
+
+![alt text](<Outputs/Question 4c-6 (df) Output.png>)
+
+Since the degrees of freedom is really high, we will treat it an infinite and hence, the critical value will be 1.962.
+
+Therefore, since the t-value is higher than the critical value, we can safely reject the null hypothesis. In other words, there is a significant difference between the engagement that users give to influencers compared to the engagement that they give to each other.
+
 
 ## Section 5: Bots
 
