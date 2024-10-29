@@ -1051,7 +1051,30 @@ As we can see, the average amount of likes on photos that are done by bots is ar
 ### Question 5c
 Find which accounts (if any) implement the use of bots on their posts.
 
+To answer this question, we will join the `user_bot_likes` view with the `photos` table and group by `user_id`. This join will show us the distribution between user likes and bot likes by the users. The view will display all users that have more than 50% of total likes on their posts done by bots.
 
+```sql
+-- Combine user_bot_like with photos and group by user_id
+-- Find users where their >50% of their likes are by bots
+SELECT
+	photos.user_id AS user_id,
+    users.username AS username,
+	SUM(bot_likes) AS total_likes_by_bots,
+	SUM(total_likes) AS total_likes,
+	SUM(bot_likes) / SUM(total_likes) AS pct_liked_by_bots
+FROM photos
+JOIN user_bot_likes ON photos.id = user_bot_likes.photo_id
+JOIN users ON photos.user_id = users.id
+GROUP BY user_id
+HAVING pct_liked_by_bots >= 0.5  -- find users where >50% of their likes are by bots
+ORDER BY pct_liked_by_bots DESC;
+```
+
+![alt text](<Outputs/Question 5c Output.png>)
+
+Key findings:
+* There are 11 users that have more than 50% of the total likes on their posts done by bots.
+* The user that has the highest percentage of bot likes on their posts is xcarter with 70% of the likes are by bots.
 
 ## Section 6: Year by Year Analysis
 
