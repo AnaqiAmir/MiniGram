@@ -121,7 +121,7 @@ The primary limitation of this project lies in the nature of the data, as it is 
 
 ## Recommendations
 
-Recommendations for Growing MiniGram as a Platform
+Recommendations for growing MiniGram as a Platform:
 
 **Boosting User Growth Through Targeted Marketing:**
 * MiniGram has experienced relatively stagnant user growth, averaging around 450 new users per year over the past decade. A new marketing push, particularly focused on Q1, is highly recommended. Historically, Q1 has had the lowest user adoption rates, with only 1,184 users registering during this period. Launching targeted campaigns during the early months, and emphasizing weekends when both active and inactive users are most engaged, could help increase the platform's overall adoption and engagement.
