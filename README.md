@@ -1,5 +1,4 @@
 # MiniGram
-A database of a scaled-down version of Instagram
 
 ## Overview
 MiniGram is a social media platform designed for users to share moments from their lives with close friends and their broader community. It enables users to post photos, engage with followers, and interact with content through likes, comments, and descriptive tags, allowing easy discovery of similar posts.
@@ -13,13 +12,31 @@ The following areas will be covered in this report:
 * **Bots**: Locate suspected bots through their behaviours and understand the impact that they create through their interactions with other users and their activities.
 * **Year over Year Analysis**: Observe the trends of how MiniGram is progressing from year to year.
 
+**Disclaimer:** The data in MiniGram was created using a synthetic process, detailed in the file `Synthetic Data Generator.ipynb`. This approach allowed for full control over the distributions and variability of key features such as user behavior, engagement metrics, and activity patterns. If you're looking to fine-tune the dataset, you can easily adjust various parameters within the notebook to better suit different analytical or modeling needs.
+
 ## Executive Summary
 
-**Overview of findings**
+Upon analysis, we can see a steady growth in user registrations and activity from year to year with 5000 total users and 25000 total photos posted on MiniGram by the end of 2024. Influencers make up 2.7% of the users and plays a pivotal role in driving up engagement on the platform, with users being 4.21x more likely to engage with posts by influencers compared to normal users. The issue of bots on MiniGram is significant, with suspected bots comprising approximately 0.98% of the total user base. These bots have a noticeable impact on user engagement, as they account for an average of 23% of the likes on photos.
 
-Upon analysis, we can see a steady growth in user registrations and activity from year to year with 5000 total users and 25000 total photos posted on MiniGram by the end of 2024. Influencers make up 2.7% of the users and plays a pivotal role in driving up engagement on the platform, with users being 4.21x more likely to engage with posts by influencers compared to normal users.The issue of bots on MiniGram is significant, with suspected bots comprising approximately 0.98% of the total user base. These bots have a noticeable impact on user engagement, as they account for an average of 23% of the likes on photos.
+Results of further analysis can be found below under the Deep Dive section of this report.
+
+You can find the link to the Tableau dashboard [here](https://public.tableau.com/app/profile/anaqi.amir/viz/MiniGram/MiniGramReport).
 
 ![alt text](<MiniGram Report.png>)
+
+## Data Structure
+MiniGram's database structure can be seen below consisting of 7 tables:
+1. users
+2. photos
+3. tags
+4. photo_tags
+5. follows
+6. likes
+7. comments
+
+![ERD MiniGram](https://github.com/user-attachments/assets/9913087b-bf00-49c7-8372-534c53ea1e6e)
+
+## Deep Dive
 
 **Quick Numbers:**
 * 5000 users
@@ -99,19 +116,21 @@ Upon analysis, we can see a steady growth in user registrations and activity fro
 
 * **User Growth Consistency:** Despite fluctuations in other areas, user growth has remained relatively stable. The platform has seen around 400 new users each year, with annual growth rates staying within a +/- 10% range. This steady increase suggests that MiniGram has maintained a consistent appeal to new users over time, even if engagement growth has varied.
 
-## Data Structure
-MiniGram's database structure can be seen below consisting of 7 tables:
-1. users
-2. photos
-3. tags
-4. photo_tags
-5. follows
-6. likes
-7. comments
-
-![ERD MiniGram](https://github.com/user-attachments/assets/9913087b-bf00-49c7-8372-534c53ea1e6e)
-
 ## Limitations
 The primary limitation of this project lies in the nature of the data, as it is based on synthetic data rather than real-world user interactions. As a result, the findings of this report may not perfectly mirror actual user behavior on social media platforms. However, the objective of this report is to analyze the unique dynamics of MiniGram's ecosystem. Therefore, it should be viewed as an analysis specific to this application, rather than a comprehensive reflection of broader social media trends.
 
 ## Recommendations
+
+Recommendations for Growing MiniGram as a Platform
+
+**Boosting User Growth Through Targeted Marketing:**
+* MiniGram has experienced relatively stagnant user growth, averaging around 450 new users per year over the past decade. A new marketing push, particularly focused on Q1, is highly recommended. Historically, Q1 has had the lowest user adoption rates, with only 1,184 users registering during this period. Launching targeted campaigns during the early months, and emphasizing weekends when both active and inactive users are most engaged, could help increase the platform's overall adoption and engagement.
+
+**Leveraging Popular Content Themes for Partnerships:**
+* Analysis of highly engaged posts shows a strong affinity for photography and sports-related tags, suggesting an opportunity for MiniGram to explore partnerships or collaborations with brands and organizations within these industries. By aligning with the interests of its most engaged users, MiniGram could drive both engagement and brand visibility.
+
+**Maximizing Influence Through Influencer Promotion:**
+* With posts by influencers being 4.21 times more likely to receive engagement, MiniGram should consider actively promoting its influencers to increase platform awareness. Providing incentives for influencers to create more content and promoting their visibility could help MiniGram capitalize on its existing engagement and mirror the success of platforms like Instagram, TikTok, and YouTube, which have benefited from influencer-driven growth.
+
+**Addressing the Issue of Bot Activity:**
+* Although there are only 49 suspected bots on MiniGram, these accounts account for 15.5% of all likes on the platform, with an average of 23% of likes on posts being generated by bots. As MiniGram grows, it will be crucial to manage and mitigate the influence of bots on the platform. I recommend dedicating a development team to proactively identify and eliminate bot accounts to preserve the integrity of user engagement moving forward.
